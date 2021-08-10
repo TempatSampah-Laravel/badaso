@@ -19,7 +19,7 @@ class ApiDocs
     TXT;
 
     const ITEMS = <<<'TXT'
-    {"field":"%s","value":"%s"}
+    {"field":"%s","value":%s}
     TXT;
 
     const ITEM = <<<'TXT'
@@ -455,6 +455,33 @@ class ApiDocs
         }
     }
 
+    private static function getCreateUpdateExample($type)
+    {
+        if($type == 'number'){
+            return '"123"';
+        }
+
+        else if ($type == 'datetime'){
+            return '"2021-01-01T00:00:00.000Z"';
+        }
+
+        else if (in_array($type, ['upload_file', 'upload_image'])){
+            return '{"base64" : "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAQDAwQDAwQEAwQFBAQFBgoHBgYGBg0JCggKDw0QEA8NDw4RExgUERIXEg4PFRwVFxkZGxsbEBQdHx0aHxgaGxr/2wBDAQQFBQYFBgwHBwwaEQ8RGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhr/wAARCAAZAA8DASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABwYABf/EACsQAAIBAwIEAwkAAAAAAAAAAAEDAgQFEQchAAYSEwgUMRUiNTZRc3Sys//EABUBAQEAAAAAAAAAAAAAAAAAAAUG/8QAIREAAQMDBAMAAAAAAAAAAAAAAQIhMQMREgAEE2FxgZH/2gAMAwEAAhEDEQA/AGrUS9xr9WLeG3GuNibbm0lN5ZLXrFcsvLY9tYJyAuOTtkZAIwcJWmfMNpqjV263NeXyZN0ksQ1cU+g6B3AJZA6SfTJyQAD0gM57tTNMrfS1d/ofeulZV+cMa5UYTl3A4MAYyIAMiSACJAjOARkVGh18ut7p6y7cs26FXanv7Bma9JilqoHMiYylnqDIx2zvAHYcSVMVE73mwcyz2gNMT9iFVVlVaZ2ymCbAEMkiXu2XfrzvGla1u05st3fIqVa7xAvaZxjFa2KZDJMtgCwqG/14q/Cvy5bbBoxYnWhkqj2vJtxqHTxmbJzIxkbSEYxjESGxEQQBnHCPz18sVP3af+0OOraPhVD+Mv8AUcVYSnLLRxqK48LtfX//2Q==","name" : "file-name.jpeg"}';
+        }
+
+        else if (in_array($type, [ 'upload_file_multiple', 'upload_iamge_multiple'])){
+            return '{"0" : {"base64" : "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAQDAwQDAwQEAwQFBAQFBgoHBgYGBg0JCggKDw0QEA8NDw4RExgUERIXEg4PFRwVFxkZGxsbEBQdHx0aHxgaGxr/2wBDAQQFBQYFBgwHBwwaEQ8RGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhr/wAARCAAZAA8DASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABwYABf/EACsQAAIBAwIEAwkAAAAAAAAAAAEDAgQFEQchAAYSEwgUMRUiNTZRc3Sys//EABUBAQEAAAAAAAAAAAAAAAAAAAUG/8QAIREAAQMDBAMAAAAAAAAAAAAAAQIhMQMREgAEE2FxgZH/2gAMAwEAAhEDEQA/AGrUS9xr9WLeG3GuNibbm0lN5ZLXrFcsvLY9tYJyAuOTtkZAIwcJWmfMNpqjV263NeXyZN0ksQ1cU+g6B3AJZA6SfTJyQAD0gM57tTNMrfS1d/ofeulZV+cMa5UYTl3A4MAYyIAMiSACJAjOARkVGh18ut7p6y7cs26FXanv7Bma9JilqoHMiYylnqDIx2zvAHYcSVMVE73mwcyz2gNMT9iFVVlVaZ2ymCbAEMkiXu2XfrzvGla1u05st3fIqVa7xAvaZxjFa2KZDJMtgCwqG/14q/Cvy5bbBoxYnWhkqj2vJtxqHTxmbJzIxkbSEYxjESGxEQQBnHCPz18sVP3af+0OOraPhVD+Mv8AUcVYSnLLRxqK48LtfX//2Q==","name" : "file-name.jpeg"} , "1" : {"base64" : "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAQDAwQDAwQEAwQFBAQFBgoHBgYGBg0JCggKDw0QEA8NDw4RExgUERIXEg4PFRwVFxkZGxsbEBQdHx0aHxgaGxr/2wBDAQQFBQYFBgwHBwwaEQ8RGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhr/wAARCAAZAA8DASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABwYABf/EACsQAAIBAwIEAwkAAAAAAAAAAAEDAgQFEQchAAYSEwgUMRUiNTZRc3Sys//EABUBAQEAAAAAAAAAAAAAAAAAAAUG/8QAIREAAQMDBAMAAAAAAAAAAAAAAQIhMQMREgAEE2FxgZH/2gAMAwEAAhEDEQA/AGrUS9xr9WLeG3GuNibbm0lN5ZLXrFcsvLY9tYJyAuOTtkZAIwcJWmfMNpqjV263NeXyZN0ksQ1cU+g6B3AJZA6SfTJyQAD0gM57tTNMrfS1d/ofeulZV+cMa5UYTl3A4MAYyIAMiSACJAjOARkVGh18ut7p6y7cs26FXanv7Bma9JilqoHMiYylnqDIx2zvAHYcSVMVE73mwcyz2gNMT9iFVVlVaZ2ymCbAEMkiXu2XfrzvGla1u05st3fIqVa7xAvaZxjFa2KZDJMtgCwqG/14q/Cvy5bbBoxYnWhkqj2vJtxqHTxmbJzIxkbSEYxjESGxEQQBnHCPz18sVP3af+0OOraPhVD+Mv8AUcVYSnLLRxqK48LtfX//2Q==","name" : "file-name.jpeg"}}';
+        }
+
+        else if ($type == 'relation'){
+            return null;
+        }
+
+        else {
+            return '"Abc"';
+        }
+    }
+
     private static function getColumns($rows)
     {
         $items = [];
@@ -462,7 +489,7 @@ class ApiDocs
             $items[] = sprintf(
                 self::ITEMS,
                 CaseConvert::camel($row['field']),
-                self::getColumnExample($row['type']),
+                self::getCreateUpdateExample($row['type']),
             );
         }
 
