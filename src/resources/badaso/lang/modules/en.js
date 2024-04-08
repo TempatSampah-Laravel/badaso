@@ -40,14 +40,21 @@ export default {
     field: {
       name: "Name",
       username: "Username",
+      phone: "Phone",
+      address: "Address",
       email: "Email",
       password: "Password",
       passwordConfirmation: "Password Confirmation",
+      gender: "Gender",
     },
     button: "Register",
     existingAccount: {
       text: "Do you have an account?",
       link: "Login",
+    },
+    gender: {
+      man: "Man",
+      woman: "Woman",
     },
   },
 
@@ -124,6 +131,9 @@ export default {
     newPasswordConfirmation: "New Password Confirmation",
     name: "Name",
     avatar: "Avatar",
+    phone: "Phone Number",
+    address: "Address",
+    gender: "Gender",
     additionalInfo: "Additional info(optional)",
     token: "Verification Code",
     buttons: {
@@ -134,7 +144,7 @@ export default {
     },
   },
 
-  "404": {
+  404: {
     title: "Opps, Sorry",
     subtitle: "The page you were looking for was not found.",
     button: "Go Home",
@@ -186,6 +196,7 @@ export default {
       logName: "Log Name",
       causerType: "Causer Type",
       causerId: "Causer Id",
+      causerName: "Causer Name",
       subjectType: "Subject Type",
       subjectId: "Subject Id",
       description: "Description",
@@ -249,6 +260,7 @@ export default {
     edit: {
       multiple: "Update Configurations",
     },
+    maintenanceMode: "Maintenance setting is readonly.",
   },
 
   crud: {
@@ -375,8 +387,10 @@ export default {
         delete: "Delete",
         displayName: "Display Name",
         setRelation: "Set Relation",
+        setOtherRelation: "Set Other Relation",
         relationType: "Relation Type",
         destinationTable: "Destination Table",
+        destinationTableManytomany: "Destination Table Many To Many",
         destinationTableColumn: "Destination Column",
         destinationTableDisplayColumn: "Destination Column To Display",
         saveRelation: "Save",
@@ -486,8 +500,10 @@ export default {
         delete: "Delete",
         displayName: "Display Name",
         setRelation: "Set Relation",
+        setOtherRelation: "Set Other Relation",
         relationType: "Relation Type",
         destinationTable: "Destination Table",
+        destinationTableManytomany: "Destination Table Many To Many",
         destinationTableColumn: "Destination Column",
         destinationTableDisplayColumn: "Destination Column To Display",
         saveRelation: "Save",
@@ -509,8 +525,7 @@ export default {
       notAllowedToEdit: "You're not allowed to edit Menu",
     },
     help: {
-      key:
-        "You can set this key to be default menu in .env file. Also, you can register new menu on .env by input value.",
+      key: "You can set this key to be default menu in .env file. Also, you can register new menu on .env by input value.",
     },
     header: {
       key: "Key",
@@ -646,6 +661,14 @@ export default {
           title: "Username",
           placeholder: "Username",
         },
+        phone: {
+          title: "Phone Number",
+          placeholder: "Phone Number",
+        },
+        address: {
+          title: "Address",
+          placeholder: "Address",
+        },
         email: {
           title: "Email",
           placeholder: "Email",
@@ -661,6 +684,10 @@ export default {
         avatar: {
           title: "Avatar",
           placeholder: "Avatar",
+        },
+        gender: {
+          title: "Gender",
+          placeholder: "Gender",
         },
         additionalInfo: {
           title: "Additional Info (JSON)",
@@ -680,6 +707,18 @@ export default {
         username: {
           title: "Username",
           placeholder: "Username",
+        },
+        phone: {
+          title: "Phone Number",
+          placeholder: "Phone Number",
+        },
+        address: {
+          title: "Address",
+          placeholder: "Address",
+        },
+        gender: {
+          title: "Gender",
+          placeholder: "Gender",
         },
         email: {
           title: "Email",
@@ -710,6 +749,9 @@ export default {
       avatar: "Avatar",
       name: "Name",
       username: "Username",
+      phone: "Phone Number",
+      address: "Address",
+      gender: "Gender",
       email: "Email",
       additionalInfo: "Additional Info",
       emailVerified: "Is Email Verified",
@@ -726,6 +768,10 @@ export default {
         title: "Success",
         text: "Roles has been set",
       },
+    },
+    gender: {
+      man: "Man",
+      woman: "Woman",
     },
   },
 
@@ -829,6 +875,8 @@ export default {
       alwaysAllow: "Always Allow",
       isPublic: "Is Public",
       action: "Action",
+      rolesCanSeeAllData: "Roles Can See All Data",
+      fieldIdentifyRelatedUser: "Field Identify Related User",
     },
     footer: {
       descriptionTitle: "Registries",
@@ -872,6 +920,14 @@ export default {
           title: "Table Name",
           placeholder: "Table Name",
         },
+        rolesCanSeeAllData: {
+          title: "Role can see all data",
+          placeholder: "Role can see all data",
+        },
+        fieldIdentifyRelatedUser: {
+          title: "Column for identify user related data",
+          placeholder: "Column for identify user related data",
+        },
       },
       button: "Save",
     },
@@ -891,6 +947,8 @@ export default {
         no: "No",
       },
       button: "Edit",
+      rolesCanSeeAllData: "Roles Can See All Data",
+      fieldIdentifyRelatedUser: "Field Identify Related User",
     },
   },
 
@@ -967,13 +1025,13 @@ export default {
         empty: "You must delete this generated CRUD first on CRUD Management.",
       },
       fieldNotSupport: {
-        title : "Database Error",
+        title: "Database Error",
         text: "There's unsupported data type in table, please see the supported data type in badaso documentation",
-        tableList : "List of unsupported tables :",
-        button : {
-          visitDocs : "Visit Documentation"
-        }
-      }
+        tableList: "List of unsupported tables :",
+        button: {
+          visitDocs: "Visit Documentation",
+        },
+      },
     },
     add: {
       title: "Add Table",
@@ -1040,9 +1098,11 @@ export default {
         title: "IMPORTANT",
         content:
           'Only the following column types can be "changed": Big Integer, BLOB, Boolean, Date, Datetime, Decimal, Float, Integer, JSON, Long Text, Medium Text, Set, Small Integer, Varchar, Text and Time. Also, every field that you change, it\'ll be recorded when you submit the alter table. If you make some mistakes, you can refresh this page to reset your changes.',
-        crud:
-          "Make sure the table has not been generated with CRUD Management if you want to edit or drop it.",
+        crud: "Make sure the table has not been generated with CRUD Management if you want to edit or drop it.",
         notAllowed: "You're not allowed to edit.",
+        fieldAttUnsigned:
+          "Foreign key constraint is incorrectly formed. {0} to visit docs.",
+        visitDocs: "Click here",
       },
       error: {
         fieldName: "Field name is required.",

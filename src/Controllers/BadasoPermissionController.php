@@ -50,21 +50,35 @@ class BadasoPermissionController extends Controller
                     'required',
                     'exists:Uasoft\Badaso\Models\Permission,id',
                 ],
-                'key'          => "required|unique:Uasoft\Badaso\Models\Permission,key,{$request->id}",
-                'description'  => 'nullable',
+                'key' => "required|unique:Uasoft\Badaso\Models\Permission,key,{$request->id}",
+                'description' => 'nullable',
                 'always_allow' => 'required',
-                'is_public'    => 'required',
-                'table_name'   => 'nullable',
+                'is_public' => 'required',
+                'table_name' => 'nullable',
+                'roles_can_see_all_data' => 'nullable',
+                'field_identify_related_user' => 'nullable',
             ]);
 
             $permission = Permission::find($request->id);
+            $permission_old = $permission->toArray();
             $permission->key = $request->key;
             $permission->description = $request->description;
             $permission->always_allow = $request->always_allow;
             $permission->is_public = $request->is_public;
+            $permission->roles_can_see_all_data = $request->roles_can_see_all_data;
+            $permission->field_identify_related_user = $request->field_identify_related_user;
             $permission->save();
 
             DB::commit();
+            activity('Permissions')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => [
+                    'old' => $permission_old,
+                    'new' => $permission,
+                ]])
+                ->performedOn($permission)
+                ->event('edited')
+                ->log('Permission '.$permission->key.' has been edited');
 
             return ApiResponse::success($permission);
         } catch (Exception $e) {
@@ -80,10 +94,10 @@ class BadasoPermissionController extends Controller
 
         try {
             $request->validate([
-                'key'          => 'required|unique:Uasoft\Badaso\Models\Permission',
-                'description'  => 'nullable',
+                'key' => 'required|unique:Uasoft\Badaso\Models\Permission',
+                'description' => 'nullable',
                 'always_allow' => 'required',
-                'is_public'    => 'required',
+                'is_public' => 'required',
             ]);
 
             $permission = new Permission();
@@ -94,6 +108,12 @@ class BadasoPermissionController extends Controller
             $permission->save();
 
             DB::commit();
+            activity('Permissions')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => $permission])
+                ->performedOn($permission)
+                ->event('created')
+                ->log('Permission '.$permission->key.' has been created');
 
             return ApiResponse::success($permission);
         } catch (Exception $e) {
@@ -115,9 +135,16 @@ class BadasoPermissionController extends Controller
                 ],
             ]);
 
-            Permission::find($request->id)->delete();
+            $permission = Permission::find($request->id);
+            $permission->delete();
 
             DB::commit();
+            activity('Permissions')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => $request->all()])
+                ->performedOn($permission)
+                ->event('deleted')
+                ->log('Permission '.$permission->key.' has been deleted');
 
             return ApiResponse::success();
         } catch (Exception $e) {
@@ -137,14 +164,24 @@ class BadasoPermissionController extends Controller
                     'required',
                 ],
             ]);
-
             $id_list = explode(',', $request->ids);
 
+            $permission_keys = [];
             foreach ($id_list as $key => $id) {
-                Permission::find($id)->delete();
+                $permission = Permission::find($id);
+                $permission_keys[] = $permission->key;
+                $permission->delete();
             }
+            $permission_keys = join(',', $permission_keys);
 
             DB::commit();
+
+            activity('Permissions')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => $request->all()])
+                ->performedOn($permission)
+                ->event('deleted')
+                ->log('Permission '.$permission_keys.' has been deleted');
 
             return ApiResponse::success();
         } catch (Exception $e) {

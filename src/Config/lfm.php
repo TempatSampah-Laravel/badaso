@@ -51,7 +51,6 @@ return [
             'startup_view' => 'list',
             'max_size' => 50000, // size in KB
             'valid_mime' => [
-                'image/svg+xml',
                 'application/pdf',
                 'text/plain',
             ],
@@ -66,7 +65,6 @@ return [
                 'image/pjpeg',
                 'image/png',
                 'image/gif',
-                'image/svg+xml',
             ],
         ],
     ],
@@ -105,7 +103,7 @@ return [
 
     'should_validate_size' => false,
 
-    'should_validate_mime' => false,
+    'should_validate_mime' => true,
 
     // behavior on files with identical name
     // setting it to true cause old file replace with new one

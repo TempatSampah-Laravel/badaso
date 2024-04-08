@@ -1,14 +1,15 @@
-let exported = {};
+const exported = {};
 
-const pluginsEnv = process.env.MIX_BADASO_MODULES
-  ? process.env.MIX_BADASO_MODULES
+const pluginsEnv = import.meta.env.VITE_BADASO_PLUGINS
+  ? import.meta.env.VITE_BADASO_PLUGINS
   : null;
 
 // DYNAMIC IMPORT BADASO API HELPER
 try {
-  const modules = require.context("./modules", false, /\.js$/); //
-  modules.keys().forEach((fileName) => {
-    let property = fileName
+  const modules = import.meta.globEager("./modules/*.js");
+  Object.keys(modules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/modules\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -24,7 +25,7 @@ try {
         }
       })
       .join("");
-    exported[property] = modules(fileName).default;
+    exported[property] = modules[fileName].default;
   });
 } catch (error) {
   console.info("There is no badaso api helper");
@@ -32,13 +33,13 @@ try {
 
 // DYNAMIC IMPORT CUSTOM API HELPER
 try {
-  const modules = require.context(
-    "../../../../../../../resources/js/badaso/api",
-    false,
-    /\.js$/
-  ); //
-  modules.keys().forEach((fileName) => {
-    let property = fileName
+  const modules = import.meta.globEager(
+    "../../../../../../../resources/js/badaso/api/*.js"
+  );
+
+  Object.keys(modules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/api\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -54,7 +55,7 @@ try {
         }
       })
       .join("");
-    exported[property] = modules(fileName).default;
+    exported[property] = modules[fileName].default;
   });
 } catch (error) {
   console.info("Failed to load custom api module", error);
@@ -63,13 +64,15 @@ try {
 // DYNAMIC IMPORT CUSTOM PLUGINS API HELPER
 try {
   if (pluginsEnv) {
-    const plugins = process.env.MIX_BADASO_MODULES.split(',');
+    const plugins = import.meta.env.VITE_BADASO_PLUGINS.split(",");
     if (plugins && plugins.length > 0) {
-      plugins.forEach(plugin => {
-        const modules = require("../../../../../" + plugin + "/src/resources/js/api/").default
+      plugins.forEach((plugin) => {
+        const modules = require("../../../../../" +
+          plugin +
+          "/src/resources/js/api/").default;
         Object.keys(modules).forEach((module, index) => {
           exported[module] = modules[module];
-        })
+        });
       });
     }
   }

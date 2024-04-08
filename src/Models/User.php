@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
@@ -33,10 +34,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'username',
+        'phone',
         'email',
         'password',
         'avatar',
+        'address',
+        'gender',
         'additional_info',
+        'last_sent_token_at',
     ];
 
     /**
@@ -56,6 +61,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_sent_token_at' => 'datetime',
     ];
 
     protected static $logAttributes = [
@@ -82,5 +88,10 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, config('badaso.database.prefix').'user_roles');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->dontSubmitEmptyLogs();
     }
 }

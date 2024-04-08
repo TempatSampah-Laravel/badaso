@@ -1,25 +1,12 @@
 <template>
   <vs-row>
-    <vs-col
-      v-for="(data, index) in dashboardData"
-      :key="index"
-      :vs-lg="col"
-      vs-xs="12"
-    >
-      <vs-card class="widget__content">
-        <div class="widget__icon-container">
-          <vs-icon v-if="data.icon" class="widget__icon" :icon="data.icon"></vs-icon>
-          <h4 class="mb-1">{{ data.value }}</h4>
-          <span>{{ data.label }}</span>
-        </div>
-        <vs-progress class="widget__progress-bar" :percent="getPercent(data.value, data.max)" :color="getProgressBarColor(data.value, data.max)">primary</vs-progress>
-      </vs-card>
-    </vs-col>
+    <badaso-widget :col="col" :widgets="dashboardData"> </badaso-widget>
   </vs-row>
 </template>
 
 <script>
 export default {
+  // eslint-disable-next-line vue/multi-word-component-names
   name: "Home",
   components: {},
   data: () => ({
@@ -32,11 +19,11 @@ export default {
   },
   methods: {
     getPercent(value, max = 100) {
-      let percentage = 100 / max;
-      return value * percentage
+      const percentage = 100 / max;
+      return value * percentage;
     },
     getProgressBarColor(value, max = 100) {
-      return value > max ? 'danger' : 'primary'
+      return value > max ? "danger" : "primary";
     },
     getDashboardData() {
       this.$openLoader();
@@ -45,6 +32,14 @@ export default {
         .then((response) => {
           this.$closeLoader();
           this.dashboardData = response.data;
+          this.dashboardData.map((data) => {
+            data.value =
+              data.prefixValue +
+              data.value
+                .toString()
+                .replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, data.delimiter);
+            return data;
+          });
           if (this.dashboardData.length >= 4) {
             this.col = 3;
           } else if (this.dashboardData.length == 3) {
@@ -54,20 +49,20 @@ export default {
           }
         })
         .catch((error) => {
-          if(error.status == 401){
+          if (error.status == 401) {
             this.$closeLoader();
             this.$vs.notify({
               title: this.$t("alert.error"),
               text: error.message,
               color: "danger",
-          });
-          }else{
-             this.$closeLoader();
+            });
+          } else {
+            this.$closeLoader();
             this.$vs.notify({
               title: this.$t("alert.danger"),
               text: error.message,
               color: "danger",
-          });
+            });
           }
         });
     },

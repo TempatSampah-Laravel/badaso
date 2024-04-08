@@ -40,6 +40,9 @@ export default {
     field: {
       name: "Nama",
       username: "Username",
+      phone: "No Telp/Hp",
+      address: "Alamat",
+      gender: "Jenis Kelamin",
       email: "Email",
       password: "Kata sandi",
       passwordConfirmation: "Konfirmasi kata sandi",
@@ -48,6 +51,10 @@ export default {
     existingAccount: {
       text: "Sudah mempunyai akun?",
       link: "Masuk",
+    },
+    gender: {
+      man: "Laki-laki",
+      women: "Perempuan",
     },
   },
 
@@ -124,6 +131,9 @@ export default {
     newPasswordConfirmation: "New Password Confirmation",
     name: "Name",
     avatar: "Avatar",
+    phone: "No Telp/Hp",
+    address: "Alamat",
+    gender: "Jenis Kelamin",
     additionalInfo: "Additional info(optional)",
     token: "Verification Code",
     buttons: {
@@ -134,7 +144,7 @@ export default {
     },
   },
 
-  "404": {
+  404: {
     title: "Opps, Maaf",
     subtitle: "Halaman yang Anda cari tidak ditemukan.",
     button: "Kembali ke Home",
@@ -186,6 +196,7 @@ export default {
       logName: "Nama Log",
       causerType: "Jenis Penyebab",
       causerId: "Id Penyebab",
+      causerName: "Nama Penyebab",
       subjectType: "Jenis Subjek",
       subjectId: "Id Subjek",
       description: "Deskripsi",
@@ -249,6 +260,7 @@ export default {
     edit: {
       multiple: "Simpan Konfigurasi",
     },
+    maintenanceMode: "Pengaturan maintenance hanya readonly.",
   },
 
   crud: {
@@ -373,6 +385,7 @@ export default {
         add: "Tambah",
         delete: "Hapus",
         displayName: "Nama Tampilan",
+        setOtherRelation: "Set Relasi Lainnya",
         setRelation: "Set Relasi",
         relationType: "Tipe Relasi",
         destinationTable: "Tabel Tujuan",
@@ -484,6 +497,7 @@ export default {
         delete: "Hapus",
         displayName: "Nama Tampilan",
         setRelation: "Set Relasi",
+        setOtherRelation: "Set Relasi Lainnya",
         relationType: "Tipe Relasi",
         destinationTable: "Tabel Tujuan",
         destinationTableColumn: "Kolom Tujuan",
@@ -507,8 +521,7 @@ export default {
       notAllowedToEdit: "Anda tidak diizinkan untuk mengubah Menu",
     },
     help: {
-      key:
-        "Anda dapat mengatur key ini menjadi menu default di file .env. Juga, Anda dapat mendaftarkan menu baru di .env dengan nilai input.",
+      key: "Anda dapat mengatur key ini menjadi menu default di file .env. Juga, Anda dapat mendaftarkan menu baru di .env dengan nilai input.",
     },
     header: {
       key: "Kunci",
@@ -644,6 +657,18 @@ export default {
           title: "Username",
           placeholder: "Username",
         },
+        phone: {
+          title: "No Telp/Hp",
+          placeholder: "No Telp/Hp",
+        },
+        address: {
+          title: "Alamat",
+          placeholder: "Alamat",
+        },
+        gender: {
+          title: "Jenis Kelamin",
+          placeholder: "Jenis Kelamin",
+        },
         password: {
           title: "Kata sandi",
           placeholder: "Kata sandi",
@@ -675,6 +700,18 @@ export default {
           title: "Username",
           placeholder: "Username",
         },
+        phone: {
+          title: "No Telp/Hp",
+          placeholder: "No Telp/Hp",
+        },
+        address: {
+          title: "Alamat",
+          placeholder: "Alamat",
+        },
+        gender: {
+          title: "Jenis Kelamin",
+          placeholder: "Jenis Kelamin",
+        },
         email: {
           title: "Email",
           placeholder: "Email",
@@ -704,7 +741,10 @@ export default {
       avatar: "Avatar",
       name: "Nama",
       username: "Username",
+      phone: "No Telp/Hp",
+      address: "Alamat",
       email: "Email",
+      gender: "Jenis Kelamin",
       additionalInfo: "Info Tambahan",
       emailVerified: "Email Diverifikasi",
     },
@@ -720,6 +760,10 @@ export default {
         title: "Success",
         text: "Wewenang telah ditetapkan",
       },
+    },
+    gender: {
+      man: "Laki-laki",
+      women: "Perempuan",
     },
   },
 
@@ -818,6 +862,8 @@ export default {
       alwaysAllow: "Selalu diizinkan",
       isPublic: "Publik",
       action: "Aksi",
+      rolesCanSeeAllData: "Role yang dapat melihat semua data",
+      fieldIdentifyRelatedUser: "Kolom relasi untuk identifikasi data user",
     },
     help: {
       alwaysAllow:
@@ -866,6 +912,14 @@ export default {
           title: "Nama Tabel",
           placeholder: "Nama Tabel",
         },
+        rolesCanSeeAllData: {
+          title: "Role dapat melihat semua data",
+          placeholder: "Role dapat melihat semua data",
+        },
+        fieldIdentifyRelatedUser: {
+          title: "Kolom relasi untuk identifikasi data user",
+          placeholder: "Kolom relasi untuk identifikasi data user",
+        },
       },
       button: "Simpan",
     },
@@ -885,6 +939,8 @@ export default {
         no: "Tidak",
       },
       button: "Ubah",
+      rolesCanSeeAllData: "Role yang dapat melihat semua data",
+      fieldIdentifyRelatedUser: "Kolom relasi untuk identifikasi data user",
     },
   },
 
@@ -968,9 +1024,9 @@ export default {
         tableList: "Daftar Tabel Bermasalah :",
         button: {
           tableList: "Table list yang tidak mendukung :",
-          visitDocs: "Kunjungi Dokumentasi"
-        }
-      }
+          visitDocs: "Kunjungi Dokumentasi",
+        },
+      },
     },
     add: {
       title: "Tambah Tabel",
@@ -1037,8 +1093,10 @@ export default {
         title: "PENTING",
         content:
           'Hanya jenis kolom berikut yang dapat "diubah": Big Integer, BLOB, Boolean, Date, Datetime, Decimal, Float, Integer, JSON, Long Text, Medium Text, Set, Small Integer, Varchar, Text dan Time.',
-        crud:
-          "Pastikan tabel belum dibuat dengan CRUD Management jika ingin mengedit atau menghapus tabel.",
+        crud: "Pastikan tabel belum dibuat dengan CRUD Management jika ingin mengedit atau menghapus tabel.",
+        fieldAttUnsigned:
+          "Batasan kunci asing salah dibentuk. {0} untuk mengunjungi dokumentasi",
+        visitDocs: "Klik Disini",
       },
       error: {
         fieldName: "Field name dibutuhkan.",

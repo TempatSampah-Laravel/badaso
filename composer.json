@@ -24,25 +24,30 @@
   },
   "type": "library",
   "require": {
-    "webpatser/laravel-uuid": "^4.0",
-    "doctrine/dbal": "^2.12",
-    "larapack/doctrine-support": "^0.1.9",
-    "arcanedev/log-viewer": "^8.1",
-    "spatie/laravel-activitylog": "^3.17",
-    "spatie/laravel-backup": "^6.16",
-    "spatie/flysystem-dropbox": "^1.2.2",
-    "nao-pon/flysystem-google-drive": "^1.1.13",
-    "league/flysystem-aws-s3-v3": "^1.0.28",
-    "guzzlehttp/guzzle": "^7.0.1",
-    "unisharp/laravel-filemanager": "^2.2",
-    "darkaonline/l5-swagger": "^8.0",
-    "zircote/swagger-php": "^3.2",
-    "symfony/var-exporter": "^5.2.0",
-    "google/apiclient": "^2.9",
-    "laravel/ui": "^3.3",
-    "laravel/sanctum": "^2.11",
-    "laravel/octane": "^1.0",
-    "predis/predis": "^1.1"
+    "arcanedev/log-viewer": "~9.0 || ~10.0",
+    "darkaonline/l5-swagger": "8.5",
+    "doctrine/dbal": "2.13.9",
+    "larapack/doctrine-support": "0.1.9",
+    "laravel/sanctum": "2.15.1 || ^3.0",
+    "laravel/tinker": "2.8.1",
+    "laravel/ui": "4.2.2",
+    "league/flysystem": "3.15.1",
+    "league/flysystem-aws-s3-v3": "3.15.0",
+    "phpstan/phpstan": "1.10.15",
+    "predis/predis": "2.1.2",
+    "spatie/flysystem-dropbox": "3.0.0",
+    "spatie/laravel-activitylog": "4.7.3",
+    "spatie/laravel-backup": "8.1.11",
+    "symfony/var-exporter": "6.0.19",
+    "unisharp/laravel-filemanager": "2.6.0",
+    "webpatser/laravel-uuid": "4.0.1",
+    "zircote/swagger-php": "4.7.10",
+    "psr/http-message": "~1.1 || ~2.0",
+    "laravel/octane": "1.5.6",
+    "guzzlehttp/guzzle": "^7.2 || 7.5.1",
+    "google/apiclient": "2.13.2",
+    "masbug/flysystem-google-drive-ext": "2.2.2",
+    "php-open-source-saver/jwt-auth": "2.1.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5"
@@ -72,3 +77,5 @@
     }
   }
 }
+
+

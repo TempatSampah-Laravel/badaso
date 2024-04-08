@@ -16,7 +16,11 @@
           />
           <div v-if="errors.name" class="register__error-container">
             <div v-if="$helper.isArray(errors.name)">
-              <span class="register__input--error" v-for="(info, index) in errors.name" :key="index" >
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.name"
+                :key="index"
+              >
                 {{ info }}
               </span>
             </div>
@@ -34,12 +38,41 @@
           />
           <div v-if="errors.username" class="register__error-container">
             <div v-if="$helper.isArray(errors.username)">
-              <span class="register__input--error" v-for="(info, index) in errors.username" :key="index" >
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.username"
+                :key="index"
+              >
                 {{ info }}
               </span>
             </div>
             <div v-else>
-              <span class="register__input--error" v-html="errors.username"></span>
+              <span
+                class="register__input--error"
+                v-html="errors.username"
+              ></span>
+            </div>
+          </div>
+          <vs-input
+            icon="phone"
+            icon-after
+            size="default"
+            :placeholder="$t('register.field.phone')"
+            v-model="phone"
+            class="register__input"
+          />
+          <div v-if="errors.phone" class="register__error-container">
+            <div v-if="$helper.isArray(errors.phone)">
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.phone"
+                :key="index"
+              >
+                {{ info }}
+              </span>
+            </div>
+            <div v-else>
+              <span class="register__input--error" v-html="errors.phone"></span>
             </div>
           </div>
           <vs-input
@@ -52,7 +85,11 @@
           />
           <div v-if="errors.email" class="register__error-container">
             <div v-if="$helper.isArray(errors.email)">
-              <span class="register__input--error" v-for="(info, index) in errors.email" :key="index">
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.email"
+                :key="index"
+              >
                 {{ info }}
               </span>
             </div>
@@ -71,12 +108,19 @@
           />
           <div v-if="errors.password" class="register__error-container">
             <div v-if="$helper.isArray(errors.password)">
-              <span class="register__input--error" v-for="(info, index) in errors.password" :key="index" >
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.password"
+                :key="index"
+              >
                 {{ info }}
               </span>
             </div>
             <div v-else>
-              <span class="register__input--error" v-html="errors.password"></span>
+              <span
+                class="register__input--error"
+                v-html="errors.password"
+              ></span>
             </div>
           </div>
           <vs-input
@@ -88,9 +132,40 @@
             v-model="passwordConfirmation"
             class="register__input"
           />
-          <vs-button type="relief" class="register__button" @click="register()">{{
-            $t("register.button")
-          }}</vs-button>
+          <vs-input
+            icon="place"
+            icon-after
+            size="default"
+            :placeholder="$t('register.field.address')"
+            v-model="address"
+            class="register__input"
+          />
+          <div v-if="errors.address" class="register__error-container">
+            <div v-if="$helper.isArray(errors.address)">
+              <span
+                class="register__input--error"
+                v-for="(info, index) in errors.address"
+                :key="index"
+              >
+                {{ info }}
+              </span>
+            </div>
+            <div v-else>
+              <span class="register__input--error" v-html="errors.address"></span>
+            </div>
+          </div>
+          <badaso-select
+              v-model="gender"
+              :placeholder="$t('register.field.gender')"
+              :items="genderitems"
+              :alert="errors.gender"
+           ></badaso-select>
+          <vs-button
+            type="relief"
+            class="register__button"
+            @click="register()"
+            >{{ $t("register.button") }}</vs-button
+          >
         </form>
 
         <div class="register__login-link">
@@ -107,17 +182,27 @@
 <script>
 export default {
   name: "AuthRegister",
-  data: () => ({
-    errors: {},
-    name: "",
-    username: "",
-    email: "",
-    password: "",
-    passwordConfirmation: "",
-    baseUrl: process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
-      ? process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
-      : "badaso-dashboard",
-  }),
+  data() {
+    return {
+        errors: {},
+        name: "",
+        username: "",
+        phone:"",
+        address:"",
+        gender:"",
+        email: "",
+        password: "",
+        passwordConfirmation: "",
+        baseUrl: import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
+            ? import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
+            : "badaso-dashboard",
+
+        genderitems:[
+            { label: this.$t("register.gender.man"), value: "man" },
+            { label: this.$t("register.gender.woman"), value: "woman" },
+        ]
+    };
+  },
   methods: {
     register() {
       this.$openLoader();
@@ -125,9 +210,12 @@ export default {
         .register({
           name: this.name,
           username: this.username,
+          phone: this.phone,
           email: this.email,
           password: this.password,
           passwordConfirmation: this.passwordConfirmation,
+          address:this.address,
+          gender: this.gender,
         })
         .then((response) => {
           this.$closeLoader();

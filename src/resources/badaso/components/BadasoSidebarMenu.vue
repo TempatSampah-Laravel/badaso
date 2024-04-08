@@ -2,11 +2,9 @@
   <div :class="handleStyleClass().vsSideBarGroupClass">
     <!-- vs-sidebar--item -->
     <div
-      :class="
-        `${handleStyleClass().vsSideBarParentItem} ${
-          getItemActive().vsSideBarItemActive
-        }`
-      "
+      :class="`${handleStyleClass().vsSideBarParentItem} ${
+        getItemActive().vsSideBarItemActive
+      }`"
     >
       <!-- for dropdown -->
       <a
@@ -23,19 +21,30 @@
         <vs-icon
           v-if="isParentMenu"
           :icon="handleStyleClass().vsSideBarIcon"
-          style="margin-right:0px;"
+          style="margin-right: 0px"
         />
       </a>
       <!-- for route link -->
-      <router-link
-        :to="url"
-        aria-current="page"
-        :class="getItemActive().vsALinkItemActive"
-        v-else
-      >
-        <vs-icon :icon="icon ? icon : 'remove'" />
-        <span class="hide-in-minisidebar"> {{ title }}</span>
-      </router-link>
+      <template v-else>
+        <a
+          v-if="url.substring(0, 4) == 'http'"
+          :href="url"
+          aria-current="page"
+          :class="getItemActive().vsAlinkActive"
+        >
+          <vs-icon :icon="icon ? icon : 'remove'" />
+          <span class="hide-in-minisidebar"> {{ title }}</span>
+        </a>
+        <router-link
+          :to="url"
+          aria-current="page"
+          :class="getItemActive().vsALinkItemActive"
+          v-else
+        >
+          <vs-icon :icon="icon ? icon : 'remove'" />
+          <span class="hide-in-minisidebar"> {{ title }}</span>
+        </router-link>
+      </template>
     </div>
     <!-- vs-sidebar--group-items -->
     <ul
@@ -95,7 +104,8 @@ export default {
     children: {
       type: Array,
       default: () => {
-        []  
+        // eslint-disable-next-line no-unused-expressions
+        [];
       },
     },
   },
@@ -119,8 +129,8 @@ export default {
       // loop for add isParentMenu to props children menu item
       children = children.map((menuItem, index) => {
         menuItem.isParentMenu = false;
-        if (menuItem?.children) {
-          if (menuItem?.children?.length > 0) {
+        if (menuItem.children) {
+          if (menuItem.childrenß.length > 0) {
             menuItem.isParentMenu = true;
           }
         }
@@ -129,9 +139,9 @@ export default {
       return children;
     },
     getItemActive() {
-      let active = false;
-      let vsSideBarItemActive = active ? "vs-sidebar-item-active" : "";
-      let vsALinkItemActive = active
+      const active = false;
+      const vsSideBarItemActive = active ? "vs-sidebar-item-active" : "";
+      const vsALinkItemActive = active
         ? "router-link-exact-active router-link-active"
         : "";
       return {

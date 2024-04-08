@@ -1,18 +1,31 @@
 <template>
   <div>
-    <badaso-breadcrumb-row>
+    <badaso-breadcrumb-hover full>
       <template slot="action">
-        <vs-button
-          color="danger"
-          type="relief"
-          v-if="selected.length > 0 && $helper.isAllowed('delete_activitylogs')"
+        <download-excel
+          :data="activitylogs"
+          :fields="fieldsForExcel"
+          :worksheet="'Activity Log Management'"
+          :name="'Activity Log Management ' + '.xls'"
+          class="crud-generated__excel-button"
+        >
+          <badaso-dropdown-item icon="file_upload">
+            {{ $t("action.exportToExcel") }}
+          </badaso-dropdown-item>
+        </download-excel>
+        <badaso-dropdown-item icon="file_upload" @click="generatePdf">
+          {{ $t("action.exportToPdf") }}
+        </badaso-dropdown-item>
+        <badaso-dropdown-item
+          icon="delete_sweep"
+          v-if="selected.length > 0 && $helper.isAllowed('delete_roles')"
           @click.stop
           @click="confirmDeleteMultiple"
-          ><vs-icon icon="delete_sweep"></vs-icon>
-          {{ $t("action.bulkDelete") }}</vs-button
         >
+          {{ $t("action.bulkDelete") }}
+        </badaso-dropdown-item>
       </template>
-    </badaso-breadcrumb-row>
+    </badaso-breadcrumb-hover>
     <vs-row v-if="$helper.isAllowed('browse_activitylogs')">
       <vs-col vs-lg="12">
         <vs-card>
@@ -30,26 +43,17 @@
               @changeLimit="handleLimitChange"
               @sort="handleSort"
               :description-items="descriptionItems"
-                :description-title="$t('crudGenerated.footer.descriptionTitle')"
-                :description-connector="
-                  $t('crudGenerated.footer.descriptionConnector')
-                "
+              :description-title="$t('crudGenerated.footer.descriptionTitle')"
+              :description-connector="
+                $t('crudGenerated.footer.descriptionConnector')
+              "
             >
               <template slot="thead">
                 <badaso-th sort-key="logName">
                   {{ $t("activityLog.header.logName") }}
                 </badaso-th>
-                <badaso-th sort-key="causerType">
-                  {{ $t("activityLog.header.causerType") }}
-                </badaso-th>
-                <badaso-th sort-key="causerId">
-                  {{ $t("activityLog.header.causerId") }}
-                </badaso-th>
-                <badaso-th sort-key="subjectType">
-                  {{ $t("activityLog.header.subjectType") }}
-                </badaso-th>
-                <badaso-th sort-key="subjectId">
-                  {{ $t("activityLog.header.subjectId") }}
+                <badaso-th sort-key="causerName">
+                  {{ $t("activityLog.header.causerName") }}
                 </badaso-th>
                 <badaso-th sort-key="description">
                   {{ $t("activityLog.header.description") }}
@@ -69,17 +73,8 @@
                   <vs-td :data="record.logName">
                     {{ record.logName ? record.logName : "-" }}
                   </vs-td>
-                  <vs-td :data="record.causerType">
-                    {{ record.causerType ? record.causerType : "-" }}
-                  </vs-td>
-                  <vs-td :data="record.causerId">
-                    {{ record.causerId ? record.causerId : "-" }}
-                  </vs-td>
-                  <vs-td :data="record.subjectType">
-                    {{ record.subjectType ? record.subjectType : "-" }}
-                  </vs-td>
-                  <vs-td :data="record.subjectId">
-                    {{ record.subjectId ? record.subjectId : "-" }}
+                  <vs-td :data="record.causerName">
+                    {{ record.causerName ? record.causerName : "-" }}
                   </vs-td>
                   <vs-td :data="record.description">
                     {{ record.description }}
@@ -128,11 +123,14 @@
   </div>
 </template>
 <script>
+// eslint-disable-next-line no-unused-vars
 import moment from "moment";
-
+import downloadExcel from "vue-json-excel";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 export default {
   name: "ActivityLogBrowse",
-  components: {},
+  components: { downloadExcel },
   data: () => ({
     data: {},
     selected: [],
@@ -145,15 +143,20 @@ export default {
     filter: "",
     orderField: "",
     orderDirection: "",
+    fieldsForExcel: {},
+    fieldsForPdf: [],
+    dataType: {
+      fields: ["log_name", "description", "created_at", "causer_name"],
+    },
   }),
   mounted() {
     this.getActivityLogList();
   },
   watch: {
-    page: function(to, from) {
+    page: function (to, from) {
       this.getActivityLogList();
     },
-    limit: function(to, from) {
+    limit: function (to, from) {
       this.page = 1;
       this.getActivityLogList();
     },
@@ -171,8 +174,8 @@ export default {
       this.limit = e;
     },
     handleSort(key, type) {
-      this.orderField = key
-      this.orderDirection = type
+      this.orderField = key;
+      this.orderDirection = type;
       this.getActivityLogList();
     },
     getActivityLogList() {
@@ -183,17 +186,19 @@ export default {
           limit: this.limit,
           page: this.page,
           orderField: this.orderField,
-          orderDirection: this.orderDirection
+          orderDirection: this.orderDirection,
         })
         .then((response) => {
           this.$closeLoader();
           this.selected = [];
           this.data = response.data;
-          this.activitylogs = response.data.activitylog;
+          this.activitylogs = response.data.data;
+          console.log(response.data);
           this.totalItem =
             response.data.total > 0
               ? Math.ceil(response.data.total / this.limit)
               : 1;
+          this.prepareExcelExporter();
         })
         .catch((error) => {
           this.$closeLoader();
@@ -203,6 +208,93 @@ export default {
             color: "danger",
           });
         });
+    },
+    prepareExcelExporter() {
+      for (const iterator of this.dataType.fields) {
+        let field = iterator;
+        if (field.includes("_")) {
+          field = field.split("_");
+          field =
+            field[0].charAt(0).toUpperCase() +
+            field[0].slice(1) +
+            " " +
+            field[1].charAt(0).toUpperCase() +
+            field[1].slice(1);
+        }
+        field = field.charAt(0).toUpperCase() + field.slice(1);
+
+        this.fieldsForExcel[field] =
+          this.$caseConvert.stringSnakeToCamel(iterator);
+      }
+
+      for (let iterator of this.dataType.fields) {
+        if (iterator.includes("_")) {
+          iterator = iterator.split("_");
+          iterator =
+            iterator[0] +
+            " " +
+            iterator[1].charAt(0).toUpperCase() +
+            iterator[1].slice(1);
+        }
+
+        const string = this.$caseConvert.stringSnakeToCamel(iterator);
+        this.fieldsForPdf.push(
+          string.charAt(0).toUpperCase() + string.slice(1)
+        );
+      }
+    },
+    generatePdf() {
+      let data = this.activitylogs;
+
+      const fields = [];
+
+      for (const iterator in this.dataType.fields) {
+        const string = this.$caseConvert.stringSnakeToCamel(
+          this.dataType.fields[iterator]
+        );
+        fields.push(string);
+      }
+
+      data.map((value) => {
+        for (const iterator in value) {
+          if (!fields.includes(iterator)) {
+            delete value[iterator];
+          }
+        }
+        return value;
+      });
+
+      const result = data.map(Object.values);
+
+      // eslint-disable-next-line new-cap
+      const doc = new jsPDF("l");
+
+      // Dynamic table title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(28);
+      doc.text(this.$t("activityLog.title"), 149, 20, "center");
+
+      // Data table
+      doc.autoTable({
+        head: [this.fieldsForPdf],
+        body: result,
+        startY: 30,
+        // Default for all columns
+        styles: { valign: "middle" },
+        headStyles: { fillColor: [6, 187, 211] },
+        // Override the default above for the text column
+        columnStyles: { text: { cellWidth: "wrap" } },
+      });
+
+      // Output Table title and data table in new tab
+      const output = doc.output("blob");
+      data = window.URL.createObjectURL(output);
+      window.open(data, "_blank");
+
+      setTimeout(function () {
+        // For Firefox it is necessary to delay revoking the ObjectURL
+        window.URL.revokeObjectURL(data);
+      }, 100);
     },
   },
 };

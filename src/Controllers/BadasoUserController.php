@@ -52,18 +52,25 @@ class BadasoUserController extends Controller
 
         try {
             $request->validate([
-                'id'        => 'required|exists:Uasoft\Badaso\Models\User,id',
-                'email'     => "required|email|unique:Uasoft\Badaso\Models\User,email,{$request->id}",
-                'username'  => "required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username,{$request->id}",
-                'name'      => 'required',
-                'avatar'    => 'nullable',
+                'id' => 'required|exists:Uasoft\Badaso\Models\User,id',
+                'email' => "required|email|unique:Uasoft\Badaso\Models\User,email,{$request->id}",
+                'username' => "required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username,{$request->id}",
+                'name' => 'required',
+                'avatar' => 'nullable',
+                'phone' => 'nullable',
+                'address' => 'nullable',
+                'gender' => 'nullable',
             ]);
 
             $user = User::find($request->id);
+            $old_user = $user->toArray();
             $user->name = $request->name;
             $user->username = $request->username;
+            $user->phone = $request->phone;
+            $user->address = $request->address;
             $user->email = $request->email;
             $user->avatar = $request->avatar;
+            $user->gender = $request->gender;
             $user->additional_info = $request->additional_info;
             if ($request->password && $request->password != '') {
                 $user->password = Hash::make($request->password);
@@ -75,6 +82,16 @@ class BadasoUserController extends Controller
             $user->save();
 
             DB::commit();
+
+            activity('User')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => [
+                    'old' => $old_user,
+                    'new' => $user,
+                ]])
+                ->performedOn($user)
+                ->event('updated')
+                ->log('User '.$user->name.' has been updated');
 
             return ApiResponse::success($user);
         } catch (Exception $e) {
@@ -90,17 +107,23 @@ class BadasoUserController extends Controller
 
         try {
             $request->validate([
-                'email'     => 'required|email|unique:Uasoft\Badaso\Models\User',
-                'name'      => 'required|string|max:255',
-                'username'  => 'required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username',
-                'avatar'    => 'nullable',
+                'email' => 'required|email|unique:Uasoft\Badaso\Models\User',
+                'name' => 'required|string|max:255',
+                'username' => 'required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username',
+                'avatar' => 'nullable',
+                'phone' => 'required|numeric|min:6',
+                'address' => 'nullable',
+                'gender' => 'required|string',
             ]);
 
             $user = new User();
             $user->name = $request->name;
             $user->username = $request->username;
+            $user->phone = $request->phone;
+            $user->address = $request->address;
             $user->email = $request->email;
             $user->avatar = $request->avatar;
+            $user->gender = $request->gender;
             $user->additional_info = $request->additional_info;
             $user->password = Hash::make($request->password);
             if ($request->email_verified) {
@@ -109,6 +132,12 @@ class BadasoUserController extends Controller
             $user->save();
 
             DB::commit();
+            activity('User')
+                ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => $user])
+                ->performedOn($user)
+                ->event('created')
+                ->log('User '.$user->name.' has been created');
 
             return ApiResponse::success($user);
         } catch (Exception $e) {
@@ -135,6 +164,12 @@ class BadasoUserController extends Controller
             $user->delete();
 
             DB::commit();
+            activity('User')
+            ->causedBy(auth()->user() ?? null)
+                ->performedOn($user)
+                ->event('deleted')
+                ->log('User '.$user->name.' has been deleted');
+            $user_name = [];
 
             return ApiResponse::success();
         } catch (Exception $e) {
@@ -156,14 +191,20 @@ class BadasoUserController extends Controller
             ]);
 
             $id_list = explode(',', $request->ids);
-
+            $user_name = [];
             foreach ($id_list as $key => $id) {
                 $user = User::find($id);
+                $user_name[] = $user->name;
                 $this->handleDeleteFile($user->avatar);
                 $user->delete();
             }
-
+            $user_name = join(',', $user_name);
             DB::commit();
+            activity('User')
+            ->causedBy(auth()->user() ?? null)
+                ->performedOn($user)
+                ->event('deleted')
+                ->log('User '.$user_name.' has been deleted');
 
             return ApiResponse::success();
         } catch (Exception $e) {

@@ -207,7 +207,7 @@ class MigrationParser
     public static function getMigrationSchemaDown($name, $rows = [], $prefix = null, bool $timestamp = true)
     {
         if ($prefix == 'drop') {
-            return sprintf(self::MIGRATION_UP_WRAPPER, $name, implode(PHP_EOL.chr(9).chr(9).chr(9), self::getMigrationFields($name, $rows, $timestamp)));
+            return sprintf(self::MIGRATION_UP_WRAPPER, $name, implode(PHP_EOL.chr(9).chr(9).chr(9), self::getMigrationFields($name, $rows)));
         }
 
         return sprintf(
@@ -360,7 +360,7 @@ class MigrationParser
                                 self::getMigrationTypeField($value['field_type']),
                                 $value['field_name'],
                                 self::getMigrationLengthField($value['field_length'], $value['field_type']),
-                                $value['field_default'],
+                                self::getMigrationDefaultField($value['field_type'], $value['field_default']),
                                 self::getMigrationNullField($value['field_null']),
                                 self::getMigrationIndexField($value['field_index'], null, $value['field_name']),
                                 self::getMigrationAttributeField($value['field_attribute']),
@@ -958,6 +958,9 @@ class MigrationParser
 
         switch ($fieldType) {
             case 'varchar':
+                $type = 'string';
+                break;
+            case 'character varying':
                 $type = 'string';
                 break;
             case 'char':

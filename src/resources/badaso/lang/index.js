@@ -1,17 +1,18 @@
 import _ from "lodash";
 
-let exported = {};
-let languages = [];
+const exported = {};
+const languages = [];
 
-const pluginsEnv = process.env.MIX_BADASO_MODULES
-  ? process.env.MIX_BADASO_MODULES
+const pluginsEnv = import.meta.env.VITE_BADASO_PLUGINS
+  ? import.meta.env.VITE_BADASO_PLUGINS
   : null;
 
 // DYNAMIC IMPORT BADASO LANG
 try {
-  const modules = require.context("./modules", false, /\.js$/); //
-  modules.keys().forEach((fileName) => {
-    let property = fileName
+  const modules = import.meta.globEager("./modules/*.js");
+  Object.keys(modules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/modules\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -29,10 +30,10 @@ try {
       .join("");
 
     languages.push({
-      label: modules(fileName).label,
+      label: modules[fileName].label,
       key: property,
     });
-    exported[property] = modules(fileName).default;
+    exported[property] = modules[fileName].default;
   });
 } catch (error) {
   console.info("Failed to load badaso languages", error);
@@ -40,13 +41,12 @@ try {
 
 // DYNAMIC IMPORT CUSTOM LANG
 try {
-  const modules = require.context(
-    "../../../../../../../resources/js/badaso/lang",
-    false,
-    /\.js$/
-  ); //
-  modules.keys().forEach((fileName) => {
-    let property = fileName
+  const modules = import.meta.globEager(
+    "../../../../../../../resources/js/badaso/lang/*.js"
+  );
+  Object.keys(modules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/lang\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -65,12 +65,12 @@ try {
     if (exported[property]) {
       exported[property] = _.merge(
         exported[property],
-        modules(fileName).default
+        modules[fileName].default
       );
     } else {
-      exported[property] = modules(fileName).default;
+      exported[property] = modules[fileName].default;
       languages.push({
-        label: modules(fileName).label,
+        label: modules[fileName].label,
         key: property,
       });
     }
@@ -82,21 +82,20 @@ try {
 // DYNAMIC IMPORT BADASO PLUGINS LANG
 try {
   if (pluginsEnv) {
-    const plugins = process.env.MIX_BADASO_MODULES.split(',');
+    const plugins = import.meta.env.VITE_BADASO_PLUGINS.split(",");
     if (plugins && plugins.length > 0) {
-      plugins.forEach(plugin => {
-        const modules = require("../../../../../" + plugin + "/src/resources/js/lang/").default
+      plugins.forEach((plugin) => {
+        const modules = require("../../../../../" +
+          plugin +
+          "/src/resources/js/lang/").default;
         Object.keys(modules.i18n).forEach((module, index) => {
           if (exported[module]) {
-            exported[module] = _.merge(
-              exported[module],
-              modules.i18n[module]
-            );
+            exported[module] = _.merge(exported[module], modules.i18n[module]);
           } else {
             exported[module] = modules.i18n[module];
             languages.push(modules.languages[index]);
           }
-        })
+        });
       });
     }
   }

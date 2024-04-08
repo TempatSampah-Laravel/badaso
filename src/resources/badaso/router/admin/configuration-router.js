@@ -1,17 +1,16 @@
 import Pages from "./../../pages/index.vue";
 
-let prefix = process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
-  ? "/" + process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
+const prefix = import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
+  ? "/" + import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
   : "/badaso-dashboard";
 
-let log_viewer = process.env.MIX_LOG_VIEWER_ROUTE
-  ? process.env.MIX_LOG_VIEWER_ROUTE
+const logViewer = import.meta.env.VITE_LOG_VIEWER_ROUTE
+  ? import.meta.env.VITE_LOG_VIEWER_ROUTE
   : "log-viewer";
 
-let api_docs = process.env.MIX_API_DOCS_ROUTE
-  ? process.env.MIX_API_DOCS_ROUTE
+const apiDocs = import.meta.env.VITE_API_DOCS_ROUTE
+  ? import.meta.env.VITE_API_DOCS_ROUTE
   : "api-docs";
-
 export default [
   {
     path: prefix + "/permission",
@@ -259,10 +258,10 @@ export default [
     },
   },
   {
-    path: prefix + "/" + log_viewer,
+    path: prefix + "/" + logViewer,
     name: "LogViewerBrowse",
     // beforeEnter() {
-    //   location.href = "/" + log_viewer;
+    //   location.href = "/" + logViewer;
     // },
     component: Pages,
     meta: {
@@ -310,7 +309,7 @@ export default [
     },
   },
   {
-    path: prefix + "/" + api_docs,
+    path: prefix + "/" + apiDocs,
     name: "ApiDocsBrowse",
     component: Pages,
     meta: {

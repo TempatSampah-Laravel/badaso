@@ -1,5 +1,8 @@
 <template>
   <vs-col :vs-lg="size" vs-xs="12" class="badaso-number__container">
+    <vs-tooltip :text="tooltip" v-if="tooltip">
+      <vs-icon icon="help_outline" size="16px" color="#A5A5A5"></vs-icon>
+    </vs-tooltip>
     <vs-input
       type="number"
       :label="label"
@@ -10,7 +13,11 @@
     <div v-if="additionalInfo" v-html="additionalInfo"></div>
     <div v-if="alert">
       <div v-if="$helper.isArray(alert)">
-        <span class="badaso-number__input--error" v-for="(info, index) in alert" :key="index" >
+        <span
+          class="badaso-number__input--error"
+          v-for="(info, index) in alert"
+          :key="index"
+        >
           {{ info }}
         </span>
       </div>
@@ -49,8 +56,12 @@ export default {
       default: "",
     },
     alert: {
-      type: String | Array,
+      type: String || Array,
       default: "",
+    },
+    tooltip: {
+      type: String,
+      default: null,
     },
   },
   methods: {

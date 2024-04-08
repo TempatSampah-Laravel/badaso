@@ -2,17 +2,18 @@ import Vue from "vue";
 import Vuex from "vuex";
 import _ from "lodash";
 
-let exported = {};
+const exported = {};
 
-const pluginsEnv = process.env.MIX_BADASO_MODULES
-  ? process.env.MIX_BADASO_MODULES
+const pluginsEnv = import.meta.env.VITE_BADASO_PLUGINS
+  ? import.meta.env.VITE_BADASO_PLUGINS
   : null;
 
 // DYNAMIC IMPORT BADASO STORES
 try {
-  const modules = require.context("./modules", false, /\.js$/); //
-  modules.keys().forEach((fileName) => {
-    let property = fileName
+  const modules = import.meta.globEager("./modules/*.js");
+  Object.keys(modules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/modules\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -28,7 +29,7 @@ try {
         }
       })
       .join("");
-    exported[property] = modules(fileName).default;
+    exported[property] = modules[fileName].default;
   });
 } catch (error) {
   console.info("Failed to load badaso stores", error);
@@ -36,13 +37,12 @@ try {
 
 // DYNAMIC IMPORT CUSTOM STORES
 try {
-  const customModules = require.context(
-    "../../../../../../../resources/js/badaso/stores",
-    false,
-    /\.js$/
+  const customModules = import.meta.globEager(
+    "../../../../../../../resources/js/badaso/stores/*.js"
   ); //
-  customModules.keys().forEach((fileName) => {
-    let property = fileName
+  Object.keys(customModules).forEach((fileName) => {
+    const property = fileName
+      .replace(/^\.\/stores\//, "")
       .replace("./", "")
       .replace(".js", "")
       .replace(/([a-z])([A-Z])/g, "$1-$2") // get all lowercase letters that are near to uppercase ones
@@ -58,7 +58,7 @@ try {
         }
       })
       .join("");
-    exported[property] = customModules(fileName).default;
+    exported[property] = customModules[fileName].default;
   });
 } catch (error) {
   console.info("Failed to load custom stores", error);
@@ -67,10 +67,12 @@ try {
 // DYNAMIC IMPORT BADASO PLUGINS STORES
 try {
   if (pluginsEnv) {
-    const plugins = process.env.MIX_BADASO_MODULES.split(',');
+    const plugins = import.meta.env.VITE_BADASO_PLUGINS.split(",");
     if (plugins && plugins.length > 0) {
-      plugins.forEach(plugin => {
-        const modules = require("../../../../../" + plugin + "/src/resources/js/store/badaso.js").default
+      plugins.forEach((plugin) => {
+        const modules = require("../../../../../" +
+          plugin +
+          "/src/resources/js/store/badaso.js").default;
         exported.badaso = _.merge(exported.badaso, modules);
       });
     }

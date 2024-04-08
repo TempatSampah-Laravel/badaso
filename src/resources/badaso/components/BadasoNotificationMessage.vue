@@ -1,14 +1,30 @@
 <template>
   <div class="top-navbar__notification">
-    <a v-on:click="openOrCloseSideBarNotification()" href="#" :style="{ color: topbarFontColor }">
+    <a
+      v-on:click="openOrCloseSideBarNotification()"
+      href="#"
+      :style="{ color: topbarFontColor }"
+    >
       <vs-icon icon="notifications"></vs-icon>
       <sup>{{ countUnreadMessage }}</sup>
     </a>
 
     <!-- list notification -->
-    <vs-sidebar position-right parent="body" default-index="1" color="primary" class="sidebarx" spacer v-model="sideBarNotification">
+    <vs-sidebar
+      position-right
+      parent="body"
+      default-index="1"
+      color="primary"
+      class="sidebarx"
+      spacer
+      v-model="sideBarNotification"
+    >
       <div index="1" icon="notifications" slot="header">
-        <vs-sidebar-item index="0" class="top-navbar__notification-item" icon="notifications">
+        <vs-sidebar-item
+          index="0"
+          class="top-navbar__notification-item"
+          icon="notifications"
+        >
           <strong>{{ $t("notification.notification") }}</strong>
         </vs-sidebar-item>
       </div>
@@ -24,16 +40,20 @@
           class="notification-item"
         >
           <h5>{{ message.title }}</h5>
-          <p>
-            {{
-              message.content.lenght > 100
-                ? message.content.substring(0, 100) + "..."
+          <span
+            v-html="
+              message.content.length > 20
+                ? message.content.substring(0, 20) + '...'
                 : message.content
-            }}
-          </p>
-
-          <vs-row>
-            <vs-icon icon="schedule" :color="topbarFontColor"></vs-icon>
+            "
+          >
+          </span>
+          <vs-row style="align-items: center">
+            <vs-icon
+              icon="schedule"
+              :color="topbarFontColor"
+              style="margin-right: 5px"
+            ></vs-icon>
             <p>{{ message.createdAt }}</p>
           </vs-row>
         </div>
@@ -60,10 +80,9 @@
         </vs-sidebar-item>
       </div>
       <vs-row>
-        <div class="m-3">
+        <div class="m-3" style="margin-left: 14px; margin-right: 14px">
           <h5>{{ detailMessage.title }}</h5>
-          <p class="mt-2">{{ detailMessage.content }}</p>
-
+          <span v-html="detailMessage.content" class="mt-2"></span>
           <vs-divider></vs-divider>
 
           <div>
@@ -94,6 +113,8 @@
 </template>
 
 <script>
+import moment from "moment";
+
 export default {
   data() {
     return {
@@ -120,7 +141,7 @@ export default {
         this.messages[index].isRead = 1;
         this.messages[index].style = { backgroundColor: "#ffffff" };
         this.readMessage(message.id);
-        this.loadUnreadMessage()
+        this.loadUnreadMessage();
       }
     },
     closeSideBarDetailMessage() {
@@ -130,7 +151,7 @@ export default {
     loadUnreadMessage() {
       this.$store.commit("badaso/SET_GLOBAL_STATE", {
         key: "countUnreadMessage",
-        value: this.messages.filter(message => message.isRead != 1).length,
+        value: this.messages.filter((message) => message.isRead != 1).length,
       });
     },
     getMessages() {
@@ -141,24 +162,28 @@ export default {
             item.style = {
               backgroundColor: !item.isRead ? "#f0f5f9" : "#ffffff",
             };
+            if (item.createdAt) {
+              item.createdAt = moment(item.createdAt)
+                .utc()
+                .format("YYYY-MM-DD HH:mm:ss");
+            }
             return item;
           });
 
-          let countUnreadMessage = this.messages.length;
-          this.loadUnreadMessage()
+          this.loadUnreadMessage();
         })
         .catch((error) => {
-          if(error.status == 401){
+          if (error.status == 401) {
             this.$vs.notify({
-            title: this.$t("alert.error"),
-            text: error.message,
-            color: "danger",
-          });
-          }else{
+              title: this.$t("alert.error"),
+              text: error.message,
+              color: "danger",
+            });
+          } else {
             this.$vs.notify({
-            title: this.$t("alert.danger"),
-            text: error.message,
-            color: "danger",
+              title: this.$t("alert.danger"),
+              text: error.message,
+              color: "danger",
             });
           }
         });
@@ -179,8 +204,8 @@ export default {
   },
   computed: {
     countUnreadMessage() {
-      let countUnreadMessage = this.$store.getters["badaso/getGlobalState"]
-        .countUnreadMessage;
+      const countUnreadMessage =
+        this.$store.getters["badaso/getGlobalState"].countUnreadMessage;
       return countUnreadMessage;
     },
   },

@@ -16,6 +16,7 @@ use Uasoft\Badaso\Helpers\Config;
 use Uasoft\Badaso\Helpers\TokenManagement;
 use Uasoft\Badaso\Mail\ForgotPassword;
 use Uasoft\Badaso\Mail\SendUserVerification;
+use Uasoft\Badaso\Models\Configuration;
 use Uasoft\Badaso\Models\EmailReset;
 use Uasoft\Badaso\Models\PasswordReset;
 use Uasoft\Badaso\Models\Role;
@@ -30,15 +31,15 @@ class BadasoAuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware(config('badaso.middleware.authenticate'), ['except' => ['login', 'register', 'forgetPassword', 'resetPassword', 'verify', 'reRequestVerification', 'validateTokenForgetPassword']]);
+        $this->middleware(config('badaso.middleware.authenticate'), ['except' => ['secretLogin', 'login', 'register', 'forgetPassword', 'resetPassword', 'verify', 'reRequestVerification', 'validateTokenForgetPassword']]);
     }
 
-    public function login(Request $request)
+    public function secretLogin(Request $request)
     {
         try {
             $remember = $request->get('remember', false);
             $credentials = [
-                'email'    => $request->email,
+                'email' => $request->email,
                 'password' => $request->password,
             ];
             $request->validate([
@@ -58,9 +59,80 @@ class BadasoAuthController extends Controller
             $should_verify_email = Config::get('adminPanelVerifyEmail') == '1' ? true : false;
             if ($should_verify_email) {
                 if (is_null($user->email_verified_at)) {
-                    return ApiResponse::success([]);
+                    $token = rand(111111, 999999);
+                    $token_lifetime = env('VERIFICATION_TOKEN_LIFETIME', 5);
+                    $expired_token = date('Y-m-d H:i:s', strtotime("+$token_lifetime minutes", strtotime(date('Y-m-d H:i:s'))));
+                    $data = [
+                        'user_id' => $user->id,
+                        'verification_token' => $token,
+                        'expired_at' => $expired_token,
+                        'count_incorrect' => 0,
+                    ];
+
+                    UserVerification::firstOrCreate($data);
+
+                    $this->sendVerificationToken(['user' => $user, 'token' => $token]);
+
+                    return ApiResponse::success();
                 }
             }
+            activity('Authentication')
+            ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => auth()->user()])
+                ->log('Login has been success');
+
+            return TokenManagement::fromUser($user)->createToken($remember)->response();
+        } catch (Exception $e) {
+            return ApiResponse::failed($e);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            $remember = $request->get('remember', false);
+            $credentials = [
+                'email' => $request->email,
+                'password' => $request->password,
+            ];
+            $request->validate([
+                'email' => [
+                    'required',
+                    function ($attribute, $value, $fail) use ($credentials) {
+                        if (! $token = Auth::attempt($credentials)) {
+                            $fail(__('badaso::validation.auth.invalid_credentials'));
+                        }
+                    },
+                ],
+                'password' => ['required'],
+            ]);
+            $user = Auth::guard(config('badaso.authenticate.guard'))->user();
+
+            // verify email verified at
+            $should_verify_email = Config::get('adminPanelVerifyEmail') == '1' ? true : false;
+            if ($should_verify_email) {
+                if (is_null($user->email_verified_at)) {
+                    $token = rand(111111, 999999);
+                    $token_lifetime = env('VERIFICATION_TOKEN_LIFETIME', 5);
+                    $expired_token = date('Y-m-d H:i:s', strtotime("+$token_lifetime minutes", strtotime(date('Y-m-d H:i:s'))));
+                    $data = [
+                        'user_id' => $user->id,
+                        'verification_token' => $token,
+                        'expired_at' => $expired_token,
+                        'count_incorrect' => 0,
+                    ];
+
+                    UserVerification::firstOrCreate($data);
+
+                    $this->sendVerificationToken(['user' => $user, 'token' => $token]);
+
+                    return ApiResponse::success();
+                }
+            }
+            activity('Authentication')
+            ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => auth()->user()])
+                ->log('Login has been success');
 
             return TokenManagement::fromUser($user)->createToken($remember)->response();
         } catch (Exception $e) {
@@ -72,6 +144,10 @@ class BadasoAuthController extends Controller
     {
         try {
             TokenManagement::fromAuth()->deleteToken();
+            activity('Authentication')
+            ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => auth()->user()])
+                ->log('Logout has been success');
 
             return ApiResponse::success();
         } catch (Exception $e) {
@@ -84,18 +160,23 @@ class BadasoAuthController extends Controller
         try {
             DB::beginTransaction();
             $request->validate([
-                'name'     => 'required|string|max:255',
+                'name' => 'required|string|max:255',
                 'username' => 'required|string|max:255|alpha_num',
-                'email'    => 'required|string|email|max:255|unique:Uasoft\Badaso\Models\User',
+                'phone' => 'required|numeric|min:6',
+                'email' => 'required|string|email|max:255|unique:Uasoft\Badaso\Models\User',
                 'password' => 'required|string|min:6|confirmed',
+                'address' => 'required|string|max:255',
+                'gender' => 'required|string',
             ]);
 
             $user = User::create([
-                'name'     => $request->get('name'),
+                'name' => $request->get('name'),
                 'username' => $request->get('username'),
-                'email'    => $request->get('email'),
-                'username' => $request->get('username'),
+                'phone' => $request->get('phone'),
+                'address' => $request->get('address'),
+                'email' => $request->get('email'),
                 'password' => Hash::make($request->get('password')),
+                'gender' => $request->get('gender'),
             ]);
 
             $role = $this->getCustomerRole();
@@ -111,23 +192,45 @@ class BadasoAuthController extends Controller
 
                 DB::commit();
 
+                activity('Authentication')
+                    ->causedBy(auth()->user() ?? null)
+                    ->withProperties(['attributes' => [
+                        'user' => $user,
+                        'role' => $user_role,
+                    ]])
+                    ->performedOn($user)
+                    ->event('created')
+                    ->log('Register has been created');
+
                 return TokenManagement::fromUser($user)->createToken()->response();
             } else {
+                User::where('email', $request->get('email'))->update([
+                    'last_sent_token_at' => date('Y-m-d H:i:s'),
+                ]);
                 $token = rand(111111, 999999);
                 $token_lifetime = env('VERIFICATION_TOKEN_LIFETIME', 5);
                 $expired_token = date('Y-m-d H:i:s', strtotime("+$token_lifetime minutes", strtotime(date('Y-m-d H:i:s'))));
                 $data = [
-                    'user_id'            => $user->id,
+                    'user_id' => $user->id,
                     'verification_token' => $token,
-                    'expired_at'         => $expired_token,
-                    'count_incorrect'    => 0,
+                    'expired_at' => $expired_token,
+                    'count_incorrect' => 0,
                 ];
 
                 UserVerification::firstOrCreate($data);
 
-                // $this->sendVerificationToken(['user' => $user, 'token' => $token]);
+                $this->sendVerificationToken(['user' => $user, 'token' => $token]);
 
                 DB::commit();
+                activity('Authentication')
+                ->causedBy(auth()->user() ?? null)
+                    ->withProperties(['attributes' => [
+                        'user' => $user,
+                        'role' => $user_role,
+                    ]])
+                    ->performedOn($user)
+                    ->event('created')
+                    ->log('Register has been created');
 
                 return ApiResponse::success([
                     'message' => __('badaso::validation.verification.email_sended'),
@@ -235,6 +338,12 @@ class BadasoAuthController extends Controller
             $user = User::find($user->id);
             $user->password = Hash::make($request->new_password);
             $user->save();
+            activity('Authentication')
+            ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => $request->all()])
+                ->performedOn($user)
+                ->event('updated')
+                ->log('Change password has been updated');
 
             return ApiResponse::success($user);
         } catch (Exception $e) {
@@ -252,8 +361,8 @@ class BadasoAuthController extends Controller
             $token = rand(111111, 999999);
 
             PasswordReset::insert([
-                'email'      => $request->email,
-                'token'      => $token,
+                'email' => $request->email,
+                'token' => $token,
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
 
@@ -345,8 +454,19 @@ class BadasoAuthController extends Controller
             ]);
 
             $user = User::where('email', $request->email)->first();
+            $time_wait_to_resend_token = Configuration::where('key', 'timeWaitResendToken')->first();
+            $date_now = date('Y-m-d H:i:s');
+            $time_out_token = date('Y-m-d H:i:s', strtotime($user->last_sent_token_at.' +  '.$time_wait_to_resend_token->value.' second'));
             $user_verification = UserVerification::where('user_id', $user->id)
                 ->first();
+
+            if ($date_now < $time_out_token) {
+                throw new SingleException(__('badaso::validation.verification.time_wait_loading'));
+            }
+
+            User::where('email', $request->get('email'))->update([
+                'last_sent_token_at' => date('Y-m-d H:i:s'),
+            ]);
 
             if (! $user_verification) {
                 throw new SingleException(__('badaso::validation.verification.verification_not_found'));
@@ -376,7 +496,8 @@ class BadasoAuthController extends Controller
 
     protected function getCustomerRole()
     {
-        $role = Role::where('name', 'customer')->first();
+        $name_role = Configuration::where('key', 'defaultRoleRegistration')->select('value')->first();
+        $role = Role::where('name', $name_role->value)->first();
 
         if (is_null($role)) {
             $role = new Role();
@@ -402,20 +523,35 @@ class BadasoAuthController extends Controller
             $user_id = Auth::guard($guard)->user()->id;
 
             $request->validate([
-                'name'      => 'required|string|max:255',
-                'username'  => "required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username,{$user_id}",
-                'avatar'    => 'nullable',
+                'name' => 'required|string|max:255',
+                'username' => "required|string|max:255|alpha_num|unique:Uasoft\Badaso\Models\User,username,{$user_id}",
+                'avatar' => 'nullable',
+                'phone' => 'nullable',
+                'address' => 'nullable',
+                'gender' => 'nullable',
             ]);
 
             $user = User::find($user->id);
 
             $user->name = $request->name;
             $user->username = $request->username;
+            $user->phone = $request->phone;
+            $user->address = $request->address;
             $user->avatar = $request->avatar;
             $user->additional_info = $request->additional_info;
+            $user->gender = $request->gender;
             $user->save();
 
             DB::commit();
+            activity('Authentication')
+            ->causedBy(auth()->user() ?? null)
+                ->withProperties(['attributes' => [
+                    'old' => auth()->user(),
+                    'new' => $user,
+                ]])
+                ->performedOn($user)
+                ->event('updated')
+                ->log('Update profile has been updated');
 
             return ApiResponse::success($user);
         } catch (Exception $e) {
@@ -446,11 +582,11 @@ class BadasoAuthController extends Controller
                 $token_lifetime = env('VERIFICATION_TOKEN_LIFETIME', 5);
                 $expired_token = date('Y-m-d H:i:s', strtotime("+$token_lifetime minutes", strtotime(date('Y-m-d H:i:s'))));
                 $data = [
-                    'user_id'            => $user->id,
-                    'email'              => $request->email,
+                    'user_id' => $user->id,
+                    'email' => $request->email,
                     'verification_token' => $token,
-                    'expired_at'         => $expired_token,
-                    'count_incorrect'    => 0,
+                    'expired_at' => $expired_token,
+                    'count_incorrect' => 0,
                 ];
 
                 EmailReset::firstOrCreate($data);
@@ -460,10 +596,19 @@ class BadasoAuthController extends Controller
                 $this->sendVerificationToken(['user' => $user, 'token' => $token]);
 
                 DB::commit();
+                activity('Authentication')
+                ->causedBy(auth()->user() ?? null)
+                    ->withProperties(['attributes' => [
+                        'old' => auth()->user()->email,
+                        'new' => $user->email,
+                    ]])
+                    ->performedOn($user)
+                    ->event('updated')
+                    ->log('Update email has been updated');
 
                 return ApiResponse::success([
                     'should_verify_email' => true,
-                    'message'             => __('badaso::validation.verification.email_sended'),
+                    'message' => __('badaso::validation.verification.email_sended'),
                 ]);
             } else {
                 $user->email = $request->email;
@@ -474,7 +619,7 @@ class BadasoAuthController extends Controller
 
             return ApiResponse::success([
                 'should_verify_email' => false,
-                'user'                => $user,
+                'user' => $user,
             ]);
         } catch (Exception $e) {
             DB::rollBack();

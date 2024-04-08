@@ -53,7 +53,7 @@ abstract class Controller extends BaseController
                 WHERE u.id = :user_id
                 AND p.key = :permission
             ', [
-                'user_id'    => $user->id,
+                'user_id' => $user->id,
                 'permission' => $method.'_'.$data_type->name,
             ]);
 
@@ -80,6 +80,9 @@ abstract class Controller extends BaseController
         $data_rows = collect($data_type->dataRows)->where('add', 1)->all();
         $rules = [];
         foreach ($data_rows as $row) {
+            if ($row->edit == 1) {
+                $row->required = 0;
+            }
             if ($row->required == 1) {
                 $rules[$row->field][] = 'required';
                 if ($row->type == 'relation') {
@@ -132,19 +135,31 @@ abstract class Controller extends BaseController
                 $return_value = $value;
                 break;
             case 'time':
-                $z_removed = explode('.', $value)[0];
-                $time = explode('T', $z_removed)[1];
-                $return_value = $time;
+                if ($value == null) {
+                    $return_value = $value;
+                } else {
+                    $z_removed = explode('.', $value)[0];
+                    $time = explode('T', $z_removed)[1];
+                    $return_value = $time;
+                }
                 break;
             case 'date':
-                $z_removed = explode('.', $value)[0];
-                $date = explode('T', $z_removed)[0];
-                $return_value = $date;
+                if ($value == null) {
+                    $return_value = $value;
+                } else {
+                    $z_removed = explode('.', $value)[0];
+                    $date = explode('T', $z_removed)[0];
+                    $return_value = $date;
+                }
                 break;
             case 'datetime':
-                $z_removed = explode('.', $value)[0];
-                $date_time = str_replace('T', ' ', $z_removed);
-                $return_value = $date_time;
+                if ($value == null) {
+                    $return_value = $value;
+                } else {
+                    $z_removed = explode('.', $value)[0];
+                    $date_time = str_replace('T', ' ', $z_removed);
+                    $return_value = $date_time;
+                }
                 break;
             case 'select':
                 $return_value = $value;
@@ -175,15 +190,14 @@ abstract class Controller extends BaseController
                 $return_value = implode(',', $uploaded_path);
                 break;
             case 'upload_image_multiple':
-                $uploaded_path = $this->handleUploadFiles($value, $data_type);
-                $return_value = implode(',', $uploaded_path);
+                $return_value = $value;
                 break;
             case 'upload_file':
                 $uploaded_path = $this->handleUploadFiles([$value], $data_type);
                 $return_value = implode(',', $uploaded_path);
                 break;
             case 'upload_file_multiple':
-                $uploaded_path = $this->handleUploadFiles($value, $data_type);
+                $uploaded_path = $this->handleUploadFiles([$value], $data_type);
                 $return_value = implode(',', $uploaded_path);
                 break;
             case 'hidden':
@@ -206,13 +220,13 @@ abstract class Controller extends BaseController
         $data = [];
         $records = [];
         $builder_params = [
-            'limit'           => isset($request['limit']) ? $request['limit'] : 10,
-            'page'            => isset($request['page']) ? $request['page'] : null,
-            'order_field'     => isset($request['order_field']) ? $request['order_field'] : $data_type->order_column,
+            'limit' => isset($request['limit']) ? $request['limit'] : 10,
+            'page' => isset($request['page']) ? $request['page'] : null,
+            'order_field' => isset($request['order_field']) ? $request['order_field'] : $data_type->order_column,
             'order_direction' => isset($request['order_direction']) ? $request['order_direction'] : $data_type->order_direction,
-            'filter_key'      => isset($request['filter_key']) ? $request['filter_key'] : null,
+            'filter_key' => isset($request['filter_key']) ? $request['filter_key'] : null,
             'filter_operator' => isset($request['filter_operator']) ? $request['filter_operator'] : 'containts',
-            'filter_value'    => isset($request['filter_value']) ? $request['filter_value'] : '',
+            'filter_value' => isset($request['filter_value']) ? $request['filter_value'] : '',
         ];
 
         if ($data_type->model_name) {
@@ -235,9 +249,18 @@ abstract class Controller extends BaseController
     public function getDataDetail($slug, $id)
     {
         $data_type = $this->getDataType($slug);
+        $data_rows = collect($data_type->dataRows);
         $fields = collect($data_type->dataRows)->where('read', 1)->pluck('field')->all();
         $ids = collect($data_type->dataRows)->where('field', 'id')->pluck('field')->all();
-        $fields = array_merge($fields, $ids);
+        $field_other_relation = [];
+
+        foreach ($data_rows as $key => $data_row) {
+            if (isset($data_row['relation']) && $data_row['relation']['relation_type'] != 'belongs_to') {
+                $field_other_relation[] = $data_row['field'];
+            }
+        }
+
+        $fields = array_diff(array_merge($fields, $ids), $field_other_relation);
         $data = null;
         $record = null;
         if ($data_type->model_name) {
@@ -260,6 +283,20 @@ abstract class Controller extends BaseController
         } else {
             $record = DB::table($data_type->name)->select($fields)->where('id', $id)->first();
         }
+        if (count($field_other_relation) > 0) {
+            foreach ($data_rows as $key => $data_row) {
+                if (isset($data_row->relation) && $data_row->relation['relation_type'] == 'belongs_to_many') {
+                    $table_name = $data_type['name'];
+                    $table_destination = $data_row->relation['destination_table'];
+                    $table_manytomany = $data_row['field'];
+                    $data_relation = DB::table($table_manytomany)
+                        ->leftjoin($table_name, $table_manytomany.'.id', '=', $table_name.'_id')
+                        ->select($table_name.'_id', $table_destination.'_id')
+                        ->get();
+                    $record->$table_manytomany = $data_relation;
+                }
+            }
+        }
 
         $record = GetData::getRelationData($data_type, $record);
 
@@ -270,6 +307,7 @@ abstract class Controller extends BaseController
     {
         $data_rows = collect($data_type->dataRows)->where('add', 1)->all();
         $model = null;
+        $multi_select = [];
         if ($data_type->model_name) {
             $model = app($data_type->model_name);
             foreach ($data as $key => $value) {
@@ -278,7 +316,47 @@ abstract class Controller extends BaseController
                     $model->{$key} = $this->getContentByType($data_type, $data_row, $value);
                 }
             }
+
+            foreach ($data_rows as $key => $data_row) {
+                if (isset($data_row->relation) && $data_row->relation['relation_type'] == 'belongs_to_many') {
+                    $field = $data_row['field'];
+                    $data_manytomany = $data[$field];
+                    $table_primary = $data_type['name'];
+                    $table_manytomany = $data_row['field'];
+                    $table_relation = $data_row['relation']['destination_table'];
+                    $model_manytomany = Badaso::model('DataType')::where('name', $table_relation)->first();
+
+                    collect($model)->map(function ($models, $index) use ($model, $field) {
+                        if ($index == $field) {
+                            unset($model[$index]);
+                        }
+                    });
+
+                    $multi_select[] = [
+                        'model' => $model_manytomany['model_name'],
+                        'content' => $data_manytomany,
+                        'table' => $table_manytomany,
+                        'foreignPivotKey' => $table_primary.'_id' ? $table_primary.'_id' : null,
+                        'relatedPivotKey' => $table_relation.'_id' ? $table_relation.'_id' : null,
+                        'parentKey' => null,
+                        'relatedKey' => 'id',
+                    ];
+                }
+            }
             $model->save();
+            foreach ($multi_select as $key => $sync_data) {
+                try {
+                    $model->belongsToMany(
+                        $sync_data['model'],
+                        $sync_data['table'],
+                        $sync_data['foreignPivotKey'],
+                        $sync_data['relatedPivotKey'],
+                        $sync_data['parentKey'],
+                        $sync_data['relatedKey']
+                    )->sync($sync_data['content']);
+                } catch (Exception $e) {
+                }
+            }
         } else {
             $new_data = [];
             $timestamp = date('Y-m-d H:i:s');
@@ -287,15 +365,49 @@ abstract class Controller extends BaseController
             foreach ($data as $key => $value) {
                 $data_row = collect($data_rows)->where('field', $key)->first();
                 if (! is_null($data_row)) {
+                    if ($data_row['type'] == 'upload_image_multiple') {
+                        $new_data[$key] = $this->getContentByType($data_type, $data_row, $value);
+                    }
+                    if ($data_row['type'] == 'relation' && $data_row['relation']['relation_type'] == 'belongs_to_many') {
+                        $table_manytomany = $data_row['field'];
+                        $table_primary = $data_type['name'];
+                        $table_relation = $data_row['relation']['destination_table'];
+                        $field = $data_row['field'];
+                    }
+
                     $new_data[$key] = $this->getContentByType($data_type, $data_row, $value);
+                    if ($data_row['type'] == 'relation' && $data_row['relation']['relation_type'] == 'belongs_to_many') {
+                        $field_other_relation = $data_row['field'];
+                        $table_relation = $data_row['relation']['destination_table'];
+                        unset($new_data[$field_other_relation]);
+                    }
                 } else {
                     if (in_array($key, ['created_at', 'updated_at'])) {
                         $new_data[$key] = $value;
                     }
                 }
             }
+
             $id = DB::table($data_type->name)->insertGetId($new_data);
             $model = DB::table($data_type->name)->where('id', $id)->first();
+            foreach ($data as $key => $value) {
+                $data_row = collect($data_rows)->where('field', $key)->first();
+                if (isset($data_row['relation']) && $data_row['relation']['relation_type'] == 'belongs_to_many') {
+                    $field_other_relation = $data_row['field'];
+                    $table_relation = $data_row['relation']['destination_table'];
+                    $data_manytomany = $data[$field_other_relation];
+                    $table_primary = $data_type['name'];
+                    foreach ($data_manytomany as $key => $value) {
+                        try {
+                            DB::table($field_other_relation)->insert([
+                                $table_relation.'_id' => $value,
+                                $table_primary.'_id' => $id,
+                            ]);
+                        } catch (Exception $e) {
+                        }
+                    }
+                }
+            }
         }
 
         return $model;
@@ -307,6 +419,7 @@ abstract class Controller extends BaseController
         $model = null;
         $id = $data['id'];
         $data = collect($data)->forget('id')->all();
+        $multi_select = [];
         if ($data_type->model_name) {
             $model = app($data_type->model_name);
             $model = $model::find($id);
@@ -336,9 +449,58 @@ abstract class Controller extends BaseController
                         }
                     }
                     $model->{$key} = $this->getContentByType($data_type, $data_row, $value);
+
+                    if (isset($data_row['relation']) && $data_row['relation']['relation_type'] == 'belongs_to_many') {
+                        $field = $data_row['field'];
+                        $data_manytomany = $data[$field];
+                        $table_primary = $data_type['name'];
+                        $has_relation_belongs_to_many = true;
+                        $table_manytomany = $data_row['field'];
+                        $table_relation = $data_row['relation']['destination_table'];
+                        $model_manytomany = Badaso::model('DataType')::where('name', $table_relation)->first();
+
+                        collect($model)->map(function ($models, $index) use ($model, $field) {
+                            if ($index == $field) {
+                                unset($model[$index]);
+                            }
+                        });
+
+                        $multi_select[] = [
+                            'model' => $model_manytomany['model_name'],
+                            'content' => $data_manytomany,
+                            'table' => $table_manytomany,
+                            'foreignPivotKey' => $table_primary.'_id' ? $table_primary.'_id' : null,
+                            'relatedPivotKey' => $table_relation.'_id' ? $table_relation.'_id' : null,
+                            'parentKey' => null,
+                            'relatedKey' => 'id',
+                        ];
+                    }
+                    if (isset($data_row['relation']) && $data_row['relation']['relation_type'] == 'has_one') {
+                        $table_destination = $data_row->relation
+                        ['destination_table'];
+                        unset($model[$table_destination]);
+                    }
+                    if (isset($data_row['relation']) && $data_row['relation']['relation_type'] == 'has_many') {
+                        $table_destination = $data_row->relation['destination_table'];
+                        unset($model[$table_destination]);
+                    }
                 }
             }
             $model->save();
+
+            foreach ($multi_select as $key => $sync_data) {
+                try {
+                    $model->belongsToMany(
+                        $sync_data['model'],
+                        $sync_data['table'],
+                        $sync_data['foreignPivotKey'],
+                        $sync_data['relatedPivotKey'],
+                        $sync_data['parentKey'],
+                        $sync_data['relatedKey']
+                    )->sync($sync_data['content']);
+                } catch (Exception $e) {
+                }
+            }
         } else {
             $new_data = [];
             $data['updated_at'] = date('Y-m-d H:i:s');
@@ -348,6 +510,55 @@ abstract class Controller extends BaseController
                 $data_row = collect($data_rows)->where('field', $key)->first();
                 if (is_null($data_row)) {
                     // $new_data[$key] = $value;
+                } elseif (isset($data_row->relation) && $data_row->relation['relation_type'] == 'belongs_to_many') {
+                    $table_manytomany = $data_row->field;
+                    $table_relation = $data_row->relation['destination_table'];
+                    $table_primary = $data_type['name'];
+                    $table_primary_id = $table_primary.'_id';
+                    $table_relation_id = $table_relation.'_id';
+                    $data_manytomany = $data[$table_manytomany];
+
+                    $data_table_manytomany = DB::table($table_manytomany)->where($table_primary_id, $id)->get();
+                    foreach ($data_table_manytomany as $key => $value_table_manytomany) {
+                        if (! in_array($value_table_manytomany->{$table_relation_id}, $data_manytomany)) {
+                            DB::table($table_manytomany)
+                            ->where($table_primary_id, $id)
+                            ->where($table_relation_id, $value_table_manytomany->{$table_relation_id})
+                            ->delete();
+                        }
+                    }
+                    foreach ($data_manytomany as $key => $id_destination_table) {
+                        $data_table_manytomany = DB::table($table_manytomany)
+                                                ->where($table_relation_id, $id_destination_table)
+                                                ->where($table_primary_id, $id)
+                                                ->first();
+                        if ($data_table_manytomany) {
+                            try {
+                                DB::table($table_manytomany)
+                                    ->where($table_relation_id, $id_destination_table)
+                                    ->where($table_primary_id, $id)
+                                    ->update([
+                                        $table_relation_id => $id_destination_table,
+                                        $table_primary_id => $id,
+                                    ]);
+                            } catch (Exception $e) {
+                            }
+                        } else {
+                            try {
+                                DB::table($table_manytomany)->insert([
+                                    $table_relation_id => $id_destination_table,
+                                    $table_primary_id => $id,
+                                ]);
+                            } catch (Exception $e) {
+                            }
+                        }
+                    }
+                } elseif (isset($data_row->relation) && $data_row->relation['relation_type'] == 'has_one') {
+                    $table_destination = $data_row->relation['destination_table'];
+                    unset($data[$table_destination]);
+                } elseif (isset($data_row->relation) && $data_row->relation['relation_type'] == 'has_many') {
+                    $table_destination = $data_row->relation['destination_table'];
+                    unset($data[$table_destination]);
                 } else {
                     if (in_array($data_row->type, [
                         'upload_image',
@@ -368,7 +579,14 @@ abstract class Controller extends BaseController
                             }
                         }
                     }
-                    $new_data[$key] = $this->getContentByType($data_type, $data_row, $value);
+
+                    if (in_array($data_row->type, [
+                        'number', 'datetime', 'date', 'time',
+                    ])) {
+                        $new_data[$key] = $this->getContentByType($data_type, $data_row, $value) !== null ? $this->getContentByType($data_type, $data_row, $value) : null;
+                    } else {
+                        $new_data[$key] = $this->getContentByType($data_type, $data_row, $value) !== null ? $this->getContentByType($data_type, $data_row, $value) : '';
+                    }
                 }
             }
             DB::table($data_type->name)->where('id', $id)->update($new_data);
@@ -376,7 +594,7 @@ abstract class Controller extends BaseController
         }
 
         return [
-            'old_data'     => $old_data,
+            'old_data' => $old_data,
             'updated_data' => $model,
         ];
     }

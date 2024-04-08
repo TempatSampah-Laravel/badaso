@@ -11,26 +11,34 @@
     >
       <vs-select-item
         :key="index"
-        :value="item.value"
-        :text="item.label"
+        :value="satinize(item.value)"
+        :text="satinize(item.label)"
         v-for="(item, index) in items"
       />
     </vs-select>
     <div v-if="additionalInfo" v-html="additionalInfo"></div>
     <div v-if="alert">
       <div v-if="$helper.isArray(alert)">
-        <span class="badaso-select-multiple__input--error" v-for="(info, index) in alert" :key="index" >
+        <span
+          class="badaso-select-multiple__input--error"
+          v-for="(info, index) in alert"
+          :key="index"
+        >
           {{ info }}
         </span>
       </div>
       <div v-else>
-        <span class="badaso-select-multiple__input--error" v-html="alert"></span>
+        <span
+          class="badaso-select-multiple__input--error"
+          v-html="alert"
+        ></span>
       </div>
     </div>
   </vs-col>
 </template>
 
 <script>
+import * as DOMPurify from 'dompurify';
 export default {
   name: "BadasoSelectMultiple",
   components: {},
@@ -63,11 +71,14 @@ export default {
       default: "",
     },
     alert: {
-      type: String | Array,
+      type: String || Array,
       default: "",
     },
   },
   methods: {
+    satinize(item) {
+      return DOMPurify.sanitize(item)
+    },
     handleInput(val) {
       this.$emit("input", val);
     },

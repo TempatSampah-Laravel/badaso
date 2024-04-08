@@ -9,6 +9,9 @@
 <br />
 
 <p align="center">
+<a href="https://github.com/uasoft-indonesia/badaso/actions/workflows/eslint.yml"><img src="https://github.com/uasoft-indonesia/badaso/actions/workflows/eslint.yml/badge.svg" alt="Badaso Eslint test"></a>
+<a href="https://github.com/uasoft-indonesia/badaso/actions/workflows/phpunit.yml"><img src="https://github.com/uasoft-indonesia/badaso/actions/workflows/phpunit.yml/badge.svg" alt="Badaso PHP Unit test"></a>
+<a href="https://github.com/uasoft-indonesia/badaso/actions/workflows/phpstan.yml"><img src="https://github.com/uasoft-indonesia/badaso/actions/workflows/phpstan.yml/badge.svg" alt="Badaso PHP Stan test"></a>
 <a href="https://github.styleci.io/repos/347838630"><img src="https://github.styleci.io/repos/347838630/shield" alt="Badaso StyleCI"></a>
 <a href="https://packagist.org/packages/badaso/core"><img src="https://img.shields.io/packagist/dt/badaso/core" alt="Total Downloads"></a>
 <a href="https://packagist.org/packages/badaso/core"><img src="https://img.shields.io/packagist/v/badaso/core" alt="Latest Stable Version"></a>
@@ -81,6 +84,11 @@ Good financial support will make badaso keep up to date and keep support your aw
 Thanks to all backers & sponsors!
 
 ### Sponsors
+
+<div align="center">
+<h3>Exclusive Sponsor</h3>
+<a href="https://aws.amazon.com" target="_blank"><img style="border-radius:50%" height="200px" src="https://d2908q01vomqb2.cloudfront.net/ca3512f4dfa95a03169c5a670a4c91a19b3077b4/2019/01/10/open-source-logo-800x400.jpg"></a>
+</div>
 
 <div align="center">
 <h3>via <a href="https://github.com/sponsors/uasoft-indonesia">Github</a> & <a href="https://paypal.me/rizkiheryandi">Direct</a></h3>

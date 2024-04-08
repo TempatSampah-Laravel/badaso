@@ -14,8 +14,8 @@ function createResource() {
     (config) => {
       const token = localStorage.getItem("token");
       if (token) config.headers.Authorization = "Bearer " + token;
-      beforeRequest(config)
-      
+      beforeRequest(config);
+
       return config;
     },
     (error) => {
@@ -39,7 +39,7 @@ export default createResource();
 
 const web = createResource();
 web.interceptors.request.use((config) => {
-  config.baseURL = process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX;
+  config.baseURL = import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX;
   return config;
 });
 

@@ -17,16 +17,16 @@ use Uasoft\Badaso\Models\UserRole;
 class Badaso
 {
     protected $models = [
-        'DataRow'        => DataRow::class,
-        'DataType'       => DataType::class,
-        'Permission'     => Permission::class,
-        'Role'           => Role::class,
-        'User'           => User::class,
-        'UserRole'       => UserRole::class,
+        'DataRow' => DataRow::class,
+        'DataType' => DataType::class,
+        'Permission' => Permission::class,
+        'Role' => Role::class,
+        'User' => User::class,
+        'UserRole' => UserRole::class,
         'RolePermission' => RolePermission::class,
-        'Menu'           => Menu::class,
-        'MenuItem'       => MenuItem::class,
-        'Configuration'  => Configuration::class,
+        'Menu' => Menu::class,
+        'MenuItem' => MenuItem::class,
+        'Configuration' => Configuration::class,
     ];
 
     protected $supported_component = [
@@ -56,6 +56,7 @@ class Badaso
         'hidden',
         'code',
         'relation',
+        'data_identifier',
     ];
 
     protected $supported_filter_operator = [
@@ -67,6 +68,7 @@ class Badaso
         'belongs_to',
         'has_one',
         'has_many',
+        'belongs_to_many',
     ];
 
     protected $protected_tables = [

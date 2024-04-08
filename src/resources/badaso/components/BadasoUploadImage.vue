@@ -54,6 +54,15 @@
         <div class="badaso-upload-image__popup--top-bar">
           <h3>{{ $t("fileManager.title") }}</h3>
           <vs-spacer />
+          <badaso-select
+            v-model="sortTypeValue"
+            size="2"
+            style="margin-bottom: 0px !important; margin-right: 1rem"
+            placeholder="Sort Type"
+            :items="sortTypeList"
+            @input="sortImages"
+          >
+          </badaso-select>
           <vs-button
             color="danger"
             type="relief"
@@ -116,10 +125,7 @@
 
         <div
           v-if="getActiveTab === 'url'"
-          class="
-            badaso-upload-image__popup--right-bar
-            badaso-upload-image__popup--url-bar
-          "
+          class="badaso-upload-image__popup--right-bar badaso-upload-image__popup--url-bar"
         >
           <vs-input
             label="Paste an image URL here"
@@ -208,7 +214,7 @@ export default {
   name: "BadasoUploadImage",
   props: {
     size: {
-      type: String | Number,
+      type: String || Number,
       default: "12",
     },
     label: {
@@ -227,7 +233,7 @@ export default {
       default: "",
     },
     alert: {
-      type: String | Array,
+      type: String || Array,
       default: "",
     },
     sharesOnly: {
@@ -250,6 +256,17 @@ export default {
       },
       isValidImageUrl: undefined,
       model: null,
+      sortTypeValue: "",
+      sortTypeList: [
+        {
+          label: "Time",
+          value: "time",
+        },
+        {
+          label: "Alphabet",
+          value: "alphabet",
+        },
+      ],
     };
   },
   watch: {
@@ -355,7 +372,7 @@ export default {
       this.$refs.image.tabindex = -1;
       const files = e.target.files;
       if (files[0] !== undefined) {
-        if (files[0].size > (this.availableMimetypes.image.maxSize * 100)) {
+        if (files[0].size > this.availableMimetypes.image.maxSize * 100) {
           this.$vs.notify({
             title: this.$t("alert.danger"),
             text: "Size too large (Max. 5MB)",
@@ -363,21 +380,32 @@ export default {
           });
           return;
         }
-
+        if (!this.availableMimetypes.image.validMime.includes(files[0].type)) {
+          this.$vs.notify({
+            title: this.$t("alert.danger"),
+            text: "File type not allowed",
+            color: "danger",
+          });
+          return;
+        }
         this.uploadImage(files[0]);
       }
     },
-    getImages() {
+    sortImages(event) {
+      this.getImages(event);
+    },
+    getImages(sortType) {
       if (this.getActiveFolder) {
         this.$openLoader();
         this.$api.badasoFile
           .browseUsingLfm({
             workingDir: this.getActiveFolder,
             type: "image",
+            sort_type: sortType || "time",
             page: this.page,
           })
           .then((res) => {
-            let error = _.get(res, "data.original.error", null);
+            const error = _.get(res, "data.original.error", null);
             if (error) {
               this.$vs.notify({
                 title: this.$t("alert.danger"),
@@ -405,7 +433,7 @@ export default {
       this.$api.badasoFile
         .uploadUsingLfm(files)
         .then((res) => {
-          let error = _.get(res, "data.original.error", null);
+          const error = _.get(res, "data.original.error", null);
           if (error) {
             this.$vs.notify({
               title: this.$t("alert.danger"),
@@ -440,7 +468,7 @@ export default {
           "items[]": _.find(this.images, { url: this.model }).name,
         })
         .then((res) => {
-          let error = _.get(res, "data.original.error", null);
+          const error = _.get(res, "data.original.error", null);
           if (error) {
             this.$vs.notify({
               title: this.$t("alert.danger"),

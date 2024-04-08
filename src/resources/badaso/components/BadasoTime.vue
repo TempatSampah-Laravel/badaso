@@ -1,23 +1,31 @@
 <template>
   <vs-col :vs-lg="size" vs-xs="12" class="badaso-time__container">
-    <label v-if="label != ''"  for="" class="badaso-time__label">{{ label }}</label>
+    <label v-if="label != ''" for="" class="badaso-time__label">{{
+      label
+    }}</label>
     <div class="badaso-time__time-container">
       <datetime
         :label="label"
         type="time"
         :title="label"
         :value="value"
+        :value-zone="valueZone"
+        :zone="zone"
         class="badaso-time__input"
         @input="handleInput($event)"
       ></datetime>
       <div class="badaso-time__item-icon-box">
         <vs-icon icon="schedule" class="badaso-time__item-icon"></vs-icon>
-        </diV>
+      </div>
     </div>
     <div v-if="additionalInfo" v-html="additionalInfo"></div>
     <div v-if="alert">
       <div v-if="$helper.isArray(alert)">
-        <span class="badaso-time__input--error" v-for="(info, index) in alert" :key="index">
+        <span
+          class="badaso-time__input--error"
+          v-for="(info, index) in alert"
+          :key="index"
+        >
           {{ info }}
         </span>
       </div>
@@ -56,8 +64,16 @@ export default {
       default: "",
     },
     alert: {
-      type: String | Array,
+      type: String || Array,
       default: "",
+    },
+    valueZone: {
+      type: String,
+      default: "local",
+    },
+    zone: {
+      type: String,
+      default: "local",
     },
   },
   methods: {

@@ -86,7 +86,7 @@ class FileGenerator
     /**
      * Generate Data Row Seed File.
      *
-     * @param $data_type
+     * @param  $data_type
      */
     public function generateDataRowSeedFile(DataType $data_type): bool
     {
@@ -123,7 +123,7 @@ class FileGenerator
     /**
      * Delete And Generate Seed Files.
      *
-     * @param $data_type
+     * @param  $data_type
      */
     public function deleteAndGenerate(DataType $data_type)
     {
@@ -307,7 +307,6 @@ class FileGenerator
         $schema_up .= $this->migration_parser->getMigrationSchemaUp($table_name, $rows, $prefix);
         if (! empty($relations)) {
             $schema_up .= PHP_EOL.PHP_EOL.$this->migration_parser->getMigrationRelationshipSchemaUp($table_name, $relations);
-            $schema_down .= $this->migration_parser->getMigrationRelationshipSchemaDown($table_name, $relations).PHP_EOL.PHP_EOL;
         }
         $schema_down .= $this->migration_parser->getMigrationSchemaDown($table_name, $rows, $prefix);
 
@@ -352,6 +351,12 @@ class FileGenerator
         if (array_key_exists('current_relations', $relations) && count($relations['current_relations']) > 0) {
             $schema_up .= $this->migration_parser->getAlterMigrationRelationshipSchemaUp($table, $relations);
             $schema_down .= $this->migration_parser->getAlterMigrationRelationshipSchemaDown($table, $relations).PHP_EOL;
+        }
+        if (array_key_exists('modified_relations', $relations) && count($relations['modified_relations']) > 0) {
+            if ($schema_up != $this->migration_parser->getAlterMigrationRelationshipSchemaUp($table, $relations) && $schema_down != $this->migration_parser->getAlterMigrationRelationshipSchemaDown($table, $relations).PHP_EOL) {
+                $schema_up .= $this->migration_parser->getAlterMigrationRelationshipSchemaUp($table, $relations);
+                $schema_down .= $this->migration_parser->getAlterMigrationRelationshipSchemaDown($table, $relations).PHP_EOL;
+            }
         }
         $schema_down .= $this->migration_parser->getAlterMigrationSchemaDown($table, $rows, $prefix, $relations);
 

@@ -61,9 +61,12 @@ class BadasoBaseController extends Controller
 
             $slug = $this->getSlug($request);
             $data_type = $this->getDataType($slug);
+
             $request->validate([
                 'id' => 'exists:'.$data_type->name,
             ]);
+
+            $data = [];
 
             $data = $this->getDataDetail($slug, $request->id);
 
@@ -85,6 +88,14 @@ class BadasoBaseController extends Controller
             $request->validate([
                 'data' => [
                     'required',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $slug = $this->getSlug($request);
+                        $data_type = $this->getDataType($slug);
+                        $table_entity = DB::table($data_type->name)->where('id', $request->data['id'])->first();
+                        if (is_null($table_entity)) {
+                            $fail(__('badaso::validation.crud.id_not_exist'));
+                        }
+                    },
                 ],
             ]);
 
@@ -100,6 +111,8 @@ class BadasoBaseController extends Controller
             $guard = config('badaso.authenticate.guard');
             $user_auth = Auth::guard($guard)->user();
 
+            DB::commit();
+
             activity($data_type->display_name_singular)
                 ->causedBy($user_auth ?? null)
                 ->withProperties([
@@ -107,8 +120,6 @@ class BadasoBaseController extends Controller
                     'attributes' => $updated['updated_data'],
                 ])
                 ->log($data_type->display_name_singular.' has been updated');
-
-            DB::commit();
 
             // add event notification handle
             $table_name = $data_type->name;
@@ -174,6 +185,15 @@ class BadasoBaseController extends Controller
                 'slug' => 'required',
                 'data' => [
                     'required',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $slug = $this->getSlug($request);
+                        $data_type = $this->getDataType($slug);
+                        $table_entity = DB::table($data_type->name)->where('id', $request->data[0]['value'])->first();
+
+                        if (is_null($table_entity)) {
+                            $fail(__('badaso::validation.crud.id_not_exist'));
+                        }
+                    },
                 ],
                 'data.*.field' => ['required'],
                 'data.*.value' => ['required'],
@@ -257,6 +277,20 @@ class BadasoBaseController extends Controller
                 'slug' => 'required',
                 'data' => [
                     'required',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $slug = $this->getSlug($request);
+                        $data_type = $this->getDataType($slug);
+
+                        $data = $this->createDataFromRaw($request->input('data') ?? [], $data_type);
+                        $ids = $data['ids'];
+                        $id_list = explode(',', $ids);
+                        foreach ($id_list as $id) {
+                            $table_entity = DB::table($data_type->name)->where('id', $id)->first();
+                            if (is_null($table_entity)) {
+                                $fail(__('badaso::validation.crud.id_not_exist'));
+                            }
+                        }
+                    },
                 ],
                 'data.*.field' => ['required'],
                 'data.*.value' => ['required'],

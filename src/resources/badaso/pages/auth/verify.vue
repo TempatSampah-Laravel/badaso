@@ -1,6 +1,11 @@
 <template>
   <vs-col vs-lg="12" class="main-container__box--auth">
-    <vs-alert :active="res.active" :color="res.status" :icon="res.icon" class="main-container__alert--auth">
+    <vs-alert
+      :active="res.active"
+      :color="res.status"
+      :icon="res.icon"
+      class="main-container__alert--auth"
+    >
       <span>{{ res.message }}</span>
     </vs-alert>
 
@@ -19,7 +24,11 @@
         />
         <div v-if="errors.token" class="verify__error-container">
           <div v-if="$helper.isArray(errors.token)">
-            <span class="verify__input--error" v-for="(info, index) in errors.token" :key="index">
+            <span
+              class="verify__input--error"
+              v-for="(info, index) in errors.token"
+              :key="index"
+            >
               {{ info }}
             </span>
           </div>
@@ -59,8 +68,8 @@ export default {
   data: () => ({
     email: "",
     token: "",
-    baseUrl: process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
-      ? process.env.MIX_ADMIN_PANEL_ROUTE_PREFIX
+    baseUrl: import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
+      ? import.meta.env.VITE_ADMIN_PANEL_ROUTE_PREFIX
       : "badaso-dashboard",
     errors: {},
     processing: true,
@@ -72,13 +81,31 @@ export default {
       message: "",
     },
     retry: false,
-    timeWait: 60,
+    timeWait: 0,
   }),
   mounted() {
     this.email = this.$route.query.email;
-    this.startCounter();
+    this.getConfigurationList();
   },
   methods: {
+    getConfigurationList() {
+      this.$api.badasoConfiguration
+        .fetch({
+          key: "timeWaitResendToken",
+        })
+        .then((response) => {
+          this.timeWait = response.data.configuration[0].value;
+          this.startCounter();
+        })
+        .catch((error) => {
+          this.$closeLoader();
+          this.$vs.notify({
+            title: this.$t("alert.danger"),
+            text: error.message,
+            color: "danger",
+          });
+        });
+    },
     startCounter() {
       if (this.timeWait > 0) {
         setTimeout(() => {
@@ -136,7 +163,7 @@ export default {
           this.retry = false;
           this.timeWait = 60;
           this.startCounter();
-
+          this.getConfigurationList();
           this.$closeLoader();
           this.$vs.notify({
             title: this.$t("alert.success"),
